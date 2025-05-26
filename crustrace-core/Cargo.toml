@@ -1,13 +1,12 @@
 [package]
-name = "crustrace-core"
-version = "0.1.0"
 edition = "2021"
+name = "crustrace-core"
 publish = false
+version = "0.1.0"
 
 [dependencies]
 proc-macro2.workspace = true
 quote.workspace = true
-syn = "2.0.101"
 
 [dev-dependencies]
 insta = "1.0"

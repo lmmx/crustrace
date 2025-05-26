@@ -1,5 +1,5 @@
 [workspace]
-members = ["crustrace-core", "crustrace", "examples/fib"]
+members = ["crustrace", "crustrace-core", "examples/fib"]
 resolver = "2"
 
 [workspace.dependencies]

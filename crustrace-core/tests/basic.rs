@@ -1,7 +1,7 @@
-use insta::assert_snapshot;
-use quote::quote;
-use proc_macro2::TokenStream;
 use crustrace_core::trace_all_impl;
+use insta::assert_snapshot;
+use proc_macro2::TokenStream;
+use quote::quote;
 use rust_format::{Formatter, RustFmt};
 
 fn apply_trace_all(input: TokenStream) -> String {
@@ -18,22 +18,22 @@ fn test_single_function() {
             println!("world");
         }
     };
-    
+
     assert_snapshot!(apply_trace_all(input));
 }
 
-#[test] 
+#[test]
 fn test_multiple_functions() {
     let input = quote! {
         fn foo(x: i32) -> i32 {
             bar(x + 1)
         }
-        
+
         fn bar(y: i32) -> i32 {
             y * 2
         }
     };
-    
+
     assert_snapshot!(apply_trace_all(input));
 }
 
@@ -44,7 +44,7 @@ fn test_generic_function() {
             value.clone()
         }
     };
-    
+
     assert_snapshot!(apply_trace_all(input));
 }
 
@@ -55,7 +55,7 @@ fn test_ignores_non_functions() {
         struct Foo { field: i32 }
         fn actual_function() {}
     };
-    
+
     assert_snapshot!(apply_trace_all(input));
 }
 

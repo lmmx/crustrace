@@ -36,7 +36,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "rust-format",
- "syn",
 ]
 
 [[package]]
