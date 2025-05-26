@@ -1,0 +1,12 @@
+---
+source: crustrace-core/tests/basic.rs
+expression: apply_trace_all(input)
+---
+#[tracing::instrument(level = "info", ret)]
+fn foo(x: i32) -> i32 {
+    bar(x + 1)
+}
+#[tracing::instrument(level = "info", ret)]
+fn bar(y: i32) -> i32 {
+    y * 2
+}

@@ -1,0 +1,10 @@
+---
+source: crustrace-core/tests/basic.rs
+expression: apply_trace_all(input)
+---
+const x: String = "fn not_a_function";
+struct Foo {
+    field: i32,
+}
+#[tracing::instrument(level = "info", ret)]
+fn actual_function() {}

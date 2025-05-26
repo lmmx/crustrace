@@ -1,0 +1,6 @@
+repos:
+  - repo: https://github.com/lmmx/just-pre-commit
+    rev: v0.5.2
+    hooks:
+      - id: run-just-rust
+        args: ['precommit']

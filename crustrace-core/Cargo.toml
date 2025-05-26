@@ -1,0 +1,13 @@
+[package]
+name = "crustrace-core"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+proc-macro2.workspace = true
+quote.workspace = true
+
+[dev-dependencies]
+insta = "1.0"
+rust-format = { version = "0.3.4", features = ["proc-macro2", "token_stream"] }

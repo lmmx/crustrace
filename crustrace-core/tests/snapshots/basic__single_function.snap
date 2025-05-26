@@ -1,0 +1,8 @@
+---
+source: crustrace-core/tests/basic.rs
+expression: apply_trace_all(input)
+---
+#[tracing::instrument(level = "info", ret)]
+fn hello() {
+    println!("world");
+}
