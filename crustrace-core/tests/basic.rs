@@ -58,3 +58,24 @@ fn test_ignores_non_functions() {
     
     assert_snapshot!(apply_trace_all(input));
 }
+
+#[test]
+fn test_module_with_functions() {
+    let input = quote! {
+        mod calculations {
+            pub fn fibonacci(n: u64) -> u64 {
+                if n <= 1 {
+                    n
+                } else {
+                    add_numbers(fibonacci(n - 1), fibonacci(n - 2))
+                }
+            }
+
+            fn add_numbers(a: u64, b: u64) -> u64 {
+                a + b
+            }
+        }
+    };
+
+    assert_snapshot!(apply_trace_all(input));
+}

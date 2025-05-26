@@ -1,0 +1,9 @@
+[package]
+name = "fib"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+crustrace = { path = "../../crustrace" }
+tracing-subscriber = "0.3"
+tracing = { version = "0.1.41", default-features = false, features = ["attributes"] }
