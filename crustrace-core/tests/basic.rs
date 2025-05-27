@@ -6,9 +6,12 @@ use rust_format::{Formatter, RustFmt};
 
 fn apply_trace_all(input: TokenStream) -> String {
     let output = trace_all_impl(input);
-    RustFmt::default()
+    println!("Traced::::: {}", output);
+    let fmt_str = RustFmt::default()
         .format_tokens(output)
-        .unwrap_or_else(|e| panic!("Format error: {}", e))
+        .unwrap_or_else(|e| panic!("Format error: {}", e));
+    println!("Formatted:: {}", fmt_str);
+    fmt_str
 }
 
 #[test]

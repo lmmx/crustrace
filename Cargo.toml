@@ -3,11 +3,12 @@ members = [
   "crustrace",
   "crustrace-attributes",
   "crustrace-core",
-  "examples/fib",
+  "examples/fib_new",
 ]
 resolver = "2"
 
 [workspace.dependencies]
+crustrace-attributes = { path = "crustrace-attributes", version = "*" }
 insta = "1.0"
 proc-macro2 = "1.0"
 quote = "1.0"

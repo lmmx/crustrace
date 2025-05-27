@@ -222,27 +222,27 @@ fn parse_simple_function(input: &mut TokenIter) -> std::result::Result<SimpleFun
     }
 
     // Parse function body - if we consumed a brace in return type parsing, handle that
-    println!(
-        "Remaining tokens before body parsing: {}",
-        input.to_token_stream()
-    );
+    // println!(
+    //     "Remaining tokens before body parsing: {}",
+    //     input.to_token_stream()
+    // );
 
     let body_group = match BraceGroup::parse(input) {
         Ok(group) => {
-            println!("Successfully parsed body group");
+            // println!("Successfully parsed body group");
             group
         }
         Err(e) => {
-            println!("Failed to parse body group: {:?}", e);
+            eprintln!("Failed to parse body group: {:?}", e);
 
             // Try to see what the next token actually is
             if let Ok(next_token) = TokenTree::parse(input) {
-                println!("Next token is: {:?}", next_token);
+                eprintln!("Next token is: {:?}", next_token);
                 match next_token {
                     TokenTree::Group(group) => {
-                        println!("It's a group with delimiter: {:?}", group.delimiter());
+                        eprintln!("It's a group with delimiter: {:?}", group.delimiter());
                         if group.delimiter() == Delimiter::Brace {
-                            println!("It IS a brace group! Using it directly.");
+                            eprintln!("It IS a brace group! Using it directly.");
                             // Use this group directly
                             let mut body = TokenStream2::new();
                             group.to_tokens(&mut body);
@@ -258,7 +258,7 @@ fn parse_simple_function(input: &mut TokenIter) -> std::result::Result<SimpleFun
                             });
                         }
                     }
-                    _ => println!("It's not a group"),
+                    _ => eprintln!("It's not a group"),
                 }
             }
 
@@ -420,7 +420,7 @@ mod tests {
 
         let result = instrument_impl(args, item);
         if let Err(ref e) = result {
-            println!("Error: {}", e);
+            eprintln!("Error: {}", e);
         }
         assert!(result.is_ok());
 

@@ -69,7 +69,7 @@ fn instrument_functions(input: TokenStream) -> TokenStream {
                 if not_preceded_by_pub {
                     // Insert attribute before fn
                     let instrument = quote! {
-                        #[tracing::instrument(level = "info", ret)]
+                        #[crustrace_attributes::instrument(level = "info", ret)]
                     };
                     output.extend(instrument);
                 }
