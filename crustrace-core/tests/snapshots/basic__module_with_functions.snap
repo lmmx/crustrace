@@ -3,7 +3,7 @@ source: crustrace-core/tests/basic.rs
 expression: apply_trace_all(input)
 ---
 mod calculations {
-    #[tracing::instrument(level = "info", ret)]
+    #[crustrace::instrument(level = "info", ret)]
     pub fn fibonacci(n: u64) -> u64 {
         if n <= 1 {
             n

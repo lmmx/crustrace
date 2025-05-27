@@ -10,7 +10,7 @@ set dotenv-load
 
 default: precommit prepush
 
-precommit: code-quality
+precommit: code-quality absolve
 prepush: clippy test
 precommit-fix: code-quality-fix
 

@@ -13,6 +13,9 @@ crustrace-core = { path = "../crustrace-core" }
 proc-macro2.workspace = true
 
 [dev-dependencies]
+cargo-husky = { version = "1.5.0", default-features = false, features = [
+  "user-hooks",
+] }
 insta.workspace = true
 rust-format.workspace = true
 tracing.workspace = true
