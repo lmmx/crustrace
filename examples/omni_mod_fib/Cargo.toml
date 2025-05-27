@@ -1,0 +1,10 @@
+[package]
+edition = "2024"
+name = "omni_fib_mod"
+publish = false
+version = "0.1.0"
+
+[dependencies]
+crustrace.workspace = true
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }

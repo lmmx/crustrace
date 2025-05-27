@@ -105,7 +105,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "omni_fib"
+name = "omni_fib_mod"
+version = "0.1.0"
+dependencies = [
+ "crustrace",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "omni_fib_struct"
 version = "0.1.0"
 dependencies = [
  "crustrace",
