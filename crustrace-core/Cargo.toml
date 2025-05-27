@@ -9,5 +9,5 @@ proc-macro2.workspace = true
 quote.workspace = true
 
 [dev-dependencies]
-insta = "1.0"
-rust-format = { version = "0.3.4", features = ["proc-macro2", "token_stream"] }
+insta.workspace = true
+rust-format.workspace = true
