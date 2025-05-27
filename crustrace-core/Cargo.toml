@@ -1,6 +1,11 @@
 [package]
-edition = "2021"
+description = "Core functionality for crustrace - procedural macro implementation for function tracing"
+documentation = "https://docs.rs/crustrace-core"
+edition = "2024"
+homepage = "https://github.com/lmmx/crustrace"
+license = "MIT OR Apache-2.0"
 name = "crustrace-core"
+repository = "https://github.com/lmmx/crustrace"
 version = "0.1.0"
 
 [dependencies]

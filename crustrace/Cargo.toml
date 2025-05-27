@@ -1,8 +1,11 @@
 [package]
 description = "Function and module-level procedural macro attributes to instrument functions with tracing"
+documentation = "https://docs.rs/crustrace"
 edition = "2024"
+homepage = "https://github.com/lmmx/crustrace"
 license = "MIT OR Apache-2.0"
 name = "crustrace"
+repository = "https://github.com/lmmx/crustrace"
 version = "0.1.0"
 
 [lib]
