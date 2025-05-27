@@ -13,7 +13,6 @@ pub(crate) enum ItemType {
     Impl,
     Trait,
     Function,
-    Other,
 }
 
 impl TokenProcessor {
@@ -32,31 +31,31 @@ impl TokenProcessor {
         let mut i = start;
 
         while i < self.tokens.len() {
-            match self.identify_item(i) {
-                ItemType::Module => {
+            match self.peek_item_type(i) {
+                Some(ItemType::Module) => {
                     let (processed, next_i) =
                         self.process_container_item(i, Self::process_module_body);
                     output.extend(processed);
                     i = next_i;
                 }
-                ItemType::Impl => {
+                Some(ItemType::Impl) => {
                     let (processed, next_i) =
                         self.process_container_item(i, Self::process_impl_body);
                     output.extend(processed);
                     i = next_i;
                 }
-                ItemType::Trait => {
+                Some(ItemType::Trait) => {
                     let (processed, next_i) =
                         self.process_container_item(i, Self::process_trait_body);
                     output.extend(processed);
                     i = next_i;
                 }
-                ItemType::Function => {
+                Some(ItemType::Function) => {
                     let (processed, next_i) = self.process_functions_from(i);
                     output.extend(processed);
                     return (output, next_i);
                 }
-                ItemType::Other => {
+                _ => {
                     output.extend(std::iter::once(self.tokens[i].clone()));
                     i += 1;
                 }
@@ -66,27 +65,47 @@ impl TokenProcessor {
         (output, i)
     }
 
-    fn identify_item(&self, i: usize) -> ItemType {
-        match &self.tokens[i] {
-            TokenTree::Ident(ident) => match ident.to_string().as_str() {
-                "mod" => ItemType::Module,
-                "impl" => ItemType::Impl,
-                "trait" => ItemType::Trait,
-                "pub" if self.is_pub_fn(i) => ItemType::Function,
-                "fn" if !self.is_preceded_by_pub(i) => ItemType::Function,
-                _ => ItemType::Other,
-            },
-            _ => ItemType::Other,
+    fn peek_item_type(&self, i: usize) -> Option<ItemType> {
+        let token = self.tokens.get(i)?;
+
+        match token {
+            TokenTree::Ident(ident) => {
+                match ident.to_string().as_str() {
+                    "mod" => Some(ItemType::Module),
+                    "impl" => Some(ItemType::Impl),
+                    "trait" => Some(ItemType::Trait),
+                    "fn" => {
+                        // Only a function if not preceded by "pub"
+                        if self.is_preceded_by_pub(i) {
+                            None
+                        } else {
+                            Some(ItemType::Function)
+                        }
+                    }
+                    "pub" => {
+                        // Check if this is "pub fn"
+                        if self.is_pub_fn(i) {
+                            Some(ItemType::Function)
+                        } else {
+                            None
+                        }
+                    }
+                    _ => None,
+                }
+            }
+            _ => None,
         }
     }
 
     fn is_pub_fn(&self, i: usize) -> bool {
-        i + 1 < self.tokens.len()
-            && matches!(&self.tokens[i + 1], TokenTree::Ident(ident) if ident == "fn")
+        // Check if current token is "pub" and next is "fn"
+        matches!(self.tokens.get(i), Some(TokenTree::Ident(ident)) if ident == "pub")
+            && matches!(self.tokens.get(i + 1), Some(TokenTree::Ident(ident)) if ident == "fn")
     }
 
     fn is_preceded_by_pub(&self, i: usize) -> bool {
-        i > 0 && matches!(&self.tokens[i - 1], TokenTree::Ident(ident) if ident == "pub")
+        // Check if previous token is "pub"
+        i > 0 && matches!(self.tokens.get(i - 1), Some(TokenTree::Ident(ident)) if ident == "pub")
     }
 
     fn process_container_item<F>(&self, start: usize, body_processor: F) -> (TokenStream, usize)

@@ -1,0 +1,11 @@
+---
+source: crustrace-core/tests/patterns.rs
+expression: apply_trace_all(input)
+---
+pub(super) const unsafe fn hello() {
+    let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "hello");
+    let __tracing_attr_guard = __tracing_attr_span.enter();
+    {
+        println!("world");
+    }
+}

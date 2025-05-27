@@ -1,0 +1,34 @@
+---
+source: crustrace-core/tests/patterns.rs
+expression: apply_trace_all(input)
+---
+impl MyStruct {
+    fn method(&self) {
+        let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "method");
+        let __tracing_attr_guard = __tracing_attr_span.enter();
+        {
+            println!("method");
+        }
+    }
+    pub async fn async_method(&mut self) -> i32 {
+        let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "async_method");
+        let __tracing_attr_guard = __tracing_attr_span.enter();
+        {
+            42
+        }
+    }
+    unsafe fn unsafe_method() {
+        let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "unsafe_method");
+        let __tracing_attr_guard = __tracing_attr_span.enter();
+        {
+            println!("unsafe");
+        }
+    }
+    pub(crate) const fn const_method() -> usize {
+        let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "const_method");
+        let __tracing_attr_guard = __tracing_attr_span.enter();
+        {
+            100
+        }
+    }
+}

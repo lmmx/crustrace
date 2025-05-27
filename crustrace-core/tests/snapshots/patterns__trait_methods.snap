@@ -1,0 +1,22 @@
+---
+source: crustrace-core/tests/patterns.rs
+expression: apply_trace_all(input)
+---
+trait MyTrait {
+    fn required_method(&self);
+    async fn async_trait_method(&self) -> String {
+        let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "async_trait_method");
+        let __tracing_attr_guard = __tracing_attr_span.enter();
+        {
+            "default".to_string()
+        }
+    }
+    unsafe fn unsafe_trait_method();
+    const fn const_trait_method() -> i32 {
+        let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "const_trait_method");
+        let __tracing_attr_guard = __tracing_attr_span.enter();
+        {
+            0
+        }
+    }
+}

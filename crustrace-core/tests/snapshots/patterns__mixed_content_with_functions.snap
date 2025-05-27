@@ -1,0 +1,28 @@
+---
+source: crustrace-core/tests/patterns.rs
+expression: apply_trace_all(input)
+---
+use std::collections::HashMap;
+const SOME_CONST: i32 = 42;
+struct MyStruct {
+    field: String,
+}
+async fn actual_function() {
+    let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "actual_function");
+    let __tracing_attr_guard = __tracing_attr_span.enter();
+    {
+        println!("This should be instrumented");
+    }
+}
+enum MyEnum {
+    Variant1,
+    Variant2(i32),
+}
+pub unsafe fn another_function() -> Result<(), Error> {
+    let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "another_function");
+    let __tracing_attr_guard = __tracing_attr_span.enter();
+    {
+        Ok(())
+    }
+}
+type MyType = HashMap<String, i32>;
