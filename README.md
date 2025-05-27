@@ -52,6 +52,8 @@ tracing-subscriber = "0.3"
 
 Apply the `#[omni]` attribute to any module:
 
+- See the example in `examples/omni_mod_fib` and alongside it as a [Rust-script](https://rust-script.org/)
+
 ```rust
 use crustrace::omni;
 
@@ -89,6 +91,8 @@ fn baz(z: i32) -> i32 { ... }
 ### Instrumenting Impl Blocks
 
 Crustrace also works on impl blocks, automatically instrumenting all methods:
+
+- See the example in `examples/omni_struct_fib` and alongside it as a [Rust-script](https://rust-script.org/)
 
 ```rust
 use crustrace::omni;
