@@ -11,7 +11,7 @@ mod calculations {
             add_numbers(fibonacci(n - 1), fibonacci(n - 2))
         }
     }
-    #[crustrace_attributes::instrument(level = "info", ret)]
+    #[crustrace::instrument(level = "info", ret)]
     fn add_numbers(a: u64, b: u64) -> u64 {
         a + b
     }

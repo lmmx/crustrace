@@ -25,20 +25,11 @@ name = "crustrace"
 version = "0.1.0"
 dependencies = [
  "crustrace-core",
- "proc-macro2",
-]
-
-[[package]]
-name = "crustrace-attributes"
-version = "0.1.0"
-dependencies = [
  "insta",
  "proc-macro2",
- "quote",
  "rust-format",
  "tracing",
  "tracing-subscriber",
- "unsynn",
 ]
 
 [[package]]
@@ -49,6 +40,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "rust-format",
+ "unsynn",
 ]
 
 [[package]]
@@ -61,7 +53,7 @@ checksum = "34aa73646ffb006b8f5147f3dc182bd4bcb190227ce861fc4a4844bf8e3cb2c0"
 name = "fib_new"
 version = "0.1.0"
 dependencies = [
- "crustrace-attributes",
+ "crustrace",
  "tracing",
  "tracing-subscriber",
 ]

@@ -2,12 +2,12 @@
 
 //! ```cargo
 //! [dependencies]
-//! crustrace-attributes = { path = "../crustrace-attributes" }
+//! crustrace = { path = "../crustrace" }
 //! tracing = { version = "0.1", default-features = false }
 //! tracing-subscriber = "0.3"
 //! ```
 
-use crustrace_attributes::instrument;
+use crustrace::instrument;
 
 #[instrument]
 fn fibonacci(n: u64) -> u64 {
@@ -38,7 +38,7 @@ fn main() {
         )
         .init();
 
-    println!("=== Testing crustrace-attributes ===");
+    println!("=== Testing crustrace::instrument ===");
 
     println!("\n1. Basic instrumentation:");
     let result = fibonacci(5);

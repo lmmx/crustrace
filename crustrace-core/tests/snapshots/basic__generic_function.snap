@@ -2,7 +2,7 @@
 source: crustrace-core/tests/basic.rs
 expression: apply_trace_all(input)
 ---
-#[crustrace_attributes::instrument(level = "info", ret)]
+#[crustrace::instrument(level = "info", ret)]
 fn generic<T: Clone>(value: T) -> T {
     value.clone()
 }
