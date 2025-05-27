@@ -82,3 +82,52 @@ fn test_module_with_functions() {
 
     assert_snapshot!(apply_trace_all(input));
 }
+
+#[test]
+fn test_impl_block_methods() {
+    let input = quote! {
+        impl Calculator {
+            pub fn new() -> Self {
+                Self
+            }
+
+            pub fn add(&self, a: i32, b: i32) -> i32 {
+                a + b
+            }
+
+            pub fn multiply(&self, x: i32, y: i32) -> i32 {
+                x * y
+            }
+
+            fn internal_helper(&self, value: i32) -> i32 {
+                value * 2
+            }
+        }
+    };
+
+    assert_snapshot!(apply_trace_all(input));
+}
+
+#[test]
+fn test_impl_block_with_generics() {
+    let input = quote! {
+        impl<T> Container<T>
+        where
+            T: Clone + std::fmt::Debug,
+        {
+            pub fn new(value: T) -> Self {
+                Self { inner: value }
+            }
+
+            pub fn get(&self) -> &T {
+                &self.inner
+            }
+
+            pub fn set(&mut self, new_value: T) {
+                self.inner = new_value;
+            }
+        }
+    };
+
+    assert_snapshot!(apply_trace_all(input));
+}

@@ -2,11 +2,17 @@
 source: crustrace-core/tests/basic.rs
 expression: apply_trace_all(input)
 ---
-#[crustrace::instrument(level = "info", ret)]
 fn foo(x: i32) -> i32 {
-    bar(x + 1)
+    let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "foo");
+    let __tracing_attr_guard = __tracing_attr_span.enter();
+    {
+        bar(x + 1)
+    }
 }
-#[crustrace::instrument(level = "info", ret)]
 fn bar(y: i32) -> i32 {
-    y * 2
+    let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "bar");
+    let __tracing_attr_guard = __tracing_attr_span.enter();
+    {
+        y * 2
+    }
 }

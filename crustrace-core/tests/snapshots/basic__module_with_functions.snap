@@ -3,16 +3,22 @@ source: crustrace-core/tests/basic.rs
 expression: apply_trace_all(input)
 ---
 mod calculations {
-    #[crustrace::instrument(level = "info", ret)]
     pub fn fibonacci(n: u64) -> u64 {
-        if n <= 1 {
-            n
-        } else {
-            add_numbers(fibonacci(n - 1), fibonacci(n - 2))
+        let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "fibonacci");
+        let __tracing_attr_guard = __tracing_attr_span.enter();
+        {
+            if n <= 1 {
+                n
+            } else {
+                add_numbers(fibonacci(n - 1), fibonacci(n - 2))
+            }
         }
     }
-    #[crustrace::instrument(level = "info", ret)]
     fn add_numbers(a: u64, b: u64) -> u64 {
-        a + b
+        let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "add_numbers");
+        let __tracing_attr_guard = __tracing_attr_span.enter();
+        {
+            a + b
+        }
     }
 }

@@ -6,5 +6,8 @@ const x: String = "fn not_a_function";
 struct Foo {
     field: i32,
 }
-#[crustrace::instrument(level = "info", ret)]
-fn actual_function() {}
+fn actual_function() {
+    let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "actual_function");
+    let __tracing_attr_guard = __tracing_attr_span.enter();
+    {}
+}

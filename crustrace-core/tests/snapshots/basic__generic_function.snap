@@ -2,7 +2,10 @@
 source: crustrace-core/tests/basic.rs
 expression: apply_trace_all(input)
 ---
-#[crustrace::instrument(level = "info", ret)]
 fn generic<T: Clone>(value: T) -> T {
-    value.clone()
+    let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "generic");
+    let __tracing_attr_guard = __tracing_attr_span.enter();
+    {
+        value.clone()
+    }
 }

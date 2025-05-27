@@ -115,18 +115,16 @@ mod calculations {
     }
 }
 
-fn main() {
-    // Initialize tracing
-    tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::INFO)
-        .with_span_events(tracing_subscriber::fmt::format::FmtSpan::ENTER | 
-                          tracing_subscriber::fmt::format::FmtSpan::EXIT)
-        .init();
-    
-    use calculations::*;
-    let result = fibonacci(5);
-    println!("Result: {}", result);
-}
+// Initialize tracing
+tracing_subscriber::fmt()
+    .with_max_level(tracing::Level::INFO)
+    .with_span_events(tracing_subscriber::fmt::format::FmtSpan::ENTER | 
+                      tracing_subscriber::fmt::format::FmtSpan::EXIT)
+    .init();
+
+use calculations::*;
+let result = fibonacci(5);
+println!("Result: {}", result);
 ```
 
 This produces detailed tracing output showing the complete call hierarchy:
