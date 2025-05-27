@@ -43,21 +43,28 @@ impl FunctionExtractor {
     }
 
     pub(crate) fn is_function_start(tokens: &[TokenTree], i: usize) -> bool {
-        match &tokens[i] {
-            TokenTree::Ident(ident) if ident == "pub" => {
-                i + 1 < tokens.len()
-                    && matches!(&tokens[i + 1], TokenTree::Ident(fn_ident) if fn_ident == "fn")
-            }
-            TokenTree::Ident(ident) if ident == "fn" => {
-                i == 0 || !matches!(&tokens[i - 1], TokenTree::Ident(prev) if prev == "pub")
+        match tokens.get(i) {
+            Some(TokenTree::Ident(ident)) => {
+                match ident.to_string().as_str() {
+                    "fn" => {
+                        // Only a function if not preceded by "pub"
+                        !(i > 0
+                            && matches!(tokens.get(i - 1), Some(TokenTree::Ident(prev)) if prev == "pub"))
+                    }
+                    "pub" => {
+                        // Check if this is "pub fn"
+                        matches!(tokens.get(i + 1), Some(TokenTree::Ident(next)) if next == "fn")
+                    }
+                    _ => false,
+                }
             }
             _ => false,
         }
     }
 
     pub(crate) fn find_function_end(tokens: &[TokenTree], start: usize) -> Option<usize> {
-        for (i, tok_i) in tokens.iter().enumerate().skip(start) {
-            match &tok_i {
+        for (i, token) in tokens.iter().enumerate().skip(start) {
+            match token {
                 TokenTree::Group(group) if group.delimiter() == Delimiter::Brace => return Some(i),
                 TokenTree::Punct(punct) if punct.as_char() == ';' => return None,
                 _ => {}
