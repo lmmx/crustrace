@@ -3,6 +3,7 @@ description = "Function and module-level procedural macro attributes to instrume
 documentation = "https://docs.rs/crustrace"
 edition = "2024"
 homepage = "https://github.com/lmmx/crustrace"
+include = ["../README.md"]
 license = "MIT OR Apache-2.0"
 name = "crustrace"
 readme = "../README.md"
