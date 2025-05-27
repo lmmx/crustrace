@@ -1,13 +1,14 @@
 [package]
 description = "Core functionality for crustrace - procedural macro implementation for function tracing"
 documentation = "https://docs.rs/crustrace-core"
-edition = "2024"
+edition.workspace = true
 homepage = "https://github.com/lmmx/crustrace"
 include = ["README.md", "src/**/*"]
-license = "MIT OR Apache-2.0"
+license.workspace = true
 name = "crustrace-core"
 readme = "../README.md"
-repository = "https://github.com/lmmx/crustrace"
+repository.workspace = true
+rust-version.workspace = true
 version = "0.1.0"
 
 [dependencies]

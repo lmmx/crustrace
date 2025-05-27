@@ -8,6 +8,12 @@ members = [
 ]
 resolver = "2"
 
+[workspace.package]
+edition = "2024"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/lmmx/crustace"
+rust-version = "1.87.0"
+
 [workspace.dependencies]
 cargo-husky = { version = "1.5.0", default-features = false }
 crustrace = { version = "0.1.0", path = "crustrace" }
