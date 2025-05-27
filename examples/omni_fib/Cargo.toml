@@ -1,9 +1,10 @@
 [package]
 edition = "2024"
 name = "omni_fib"
+publish = false
 version = "0.1.0"
 
 [dependencies]
 crustrace.workspace = true
-tracing = { default-features = false, version = "0.1" }
-tracing-subscriber = "0.3"
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }

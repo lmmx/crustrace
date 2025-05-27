@@ -8,11 +8,15 @@ members = [
 resolver = "2"
 
 [workspace.dependencies]
-crustrace = { path = "crustrace", version = "*" }
+cargo-husky = { version = "1.5.0", default-features = false }
+crustrace = { path = "crustrace" }
+crustrace-core = { path = "crustrace-core" }
 insta = "1.0"
 proc-macro2 = "1.0"
 quote = "1.0"
 rust-format = { features = ["proc-macro2", "token_stream"], version = "0.3.4" }
 tracing = { default-features = false, version = "0.1.41" }
-tracing-subscriber = { default-features = false, version = "0.3" }
+tracing-subscriber = { default-features = false, version = "0.3", features = [
+  "fmt",
+] }
 unsynn = { default-features = false, version = "0.1.1" }
