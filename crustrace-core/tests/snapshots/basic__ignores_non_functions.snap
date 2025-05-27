@@ -6,5 +6,5 @@ const x: String = "fn not_a_function";
 struct Foo {
     field: i32,
 }
-#[tracing::instrument(level = "info", ret)]
+#[crustrace_attributes::instrument(level = "info", ret)]
 fn actual_function() {}

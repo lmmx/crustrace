@@ -1,0 +1,9 @@
+[package]
+edition = "2024"
+name = "fib_new"
+version = "0.1.0"
+
+[dependencies]
+crustrace-attributes.workspace = true
+tracing = { default-features = false, version = "0.1" }
+tracing-subscriber = "0.3"

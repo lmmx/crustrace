@@ -73,6 +73,9 @@ code-quality-fix:
     cargo machete
     cargo fmt --all
 
+absolve:
+    ./crustrace-dev/absolve.sh
+
 ship:
     #!/usr/bin/env -S bash -euo pipefail
     # Refuse to run if not on master branch or not up to date with origin/master
