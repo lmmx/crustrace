@@ -1,0 +1,14 @@
+---
+source: crustrace-core/tests/negative.rs
+expression: apply_trace_all(input)
+---
+fn outer_function() {
+    let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "outer_function");
+    let __tracing_attr_guard = __tracing_attr_span.enter();
+    {
+        let result = some_fn_call();
+        another_fn_call(42, "hello");
+        nested::module::fn_call();
+        obj.method_fn_call();
+    }
+}

@@ -1,0 +1,33 @@
+---
+source: crustrace-core/tests/negative.rs
+expression: apply_trace_all(input)
+---
+trait MyTrait {
+    fn trait_method(&self);
+    fn default_method(&self) {
+        let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "default_method");
+        let __tracing_attr_guard = __tracing_attr_span.enter();
+        {
+            println!("This has a body and should be instrumented");
+        }
+    }
+}
+struct MyStruct;
+impl MyTrait for MyStruct {
+    fn trait_method(&self) {
+        let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "trait_method");
+        let __tracing_attr_guard = __tracing_attr_span.enter();
+        {
+            println!("This has an impl method and should be instrumented");
+        }
+    }
+}
+fn main() {
+    let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "main");
+    let __tracing_attr_guard = __tracing_attr_span.enter();
+    {
+        let my_struct = MyStruct;
+        my_struct.default_method();
+        my_struct.trait_method();
+    }
+}

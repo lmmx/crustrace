@@ -1,0 +1,14 @@
+---
+source: crustrace-core/tests/negative.rs
+expression: apply_trace_all(input)
+---
+fn real_function() {
+    let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "real_function");
+    let __tracing_attr_guard = __tracing_attr_span.enter();
+    {
+        let msg = "This fn is not a function";
+        let code = r#"fn fake_function() { return "not real"; }"#;
+        println!("fn appears in this string too");
+    }
+}
+const TEMPLATE: &str = "fn template_function() {}";

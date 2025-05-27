@@ -1,0 +1,17 @@
+---
+source: crustrace-core/tests/negative.rs
+expression: apply_trace_all(input)
+---
+fn actual_function() {
+    let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "actual_function");
+    let __tracing_attr_guard = __tracing_attr_span.enter();
+    {
+        println!("Hello");
+    }
+}
+#[doc = r" Documentation comment with fn example() {}"]
+fn documented_function() {
+    let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "documented_function");
+    let __tracing_attr_guard = __tracing_attr_span.enter();
+    {}
+}

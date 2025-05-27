@@ -1,0 +1,27 @@
+---
+source: crustrace-core/tests/negative.rs
+expression: apply_trace_all(input)
+---
+fn legitimate_function() {
+    let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "legitimate_function");
+    let __tracing_attr_guard = __tracing_attr_span.enter();
+    {
+        let variable = "fn not_a_function";
+        some_function_call();
+        if condition {
+            another_fn_call();
+        }
+        match value {
+            Pattern => yet_another_fn_call(),
+            _ => final_fn_call(),
+        }
+    }
+}
+struct MyStruct {
+    field: String,
+}
+const CODE_SAMPLE: &str = r#"
+            fn example() {
+                println!("This fn is in a string");
+            }
+        "#;

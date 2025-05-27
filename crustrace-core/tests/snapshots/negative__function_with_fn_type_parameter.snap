@@ -1,0 +1,11 @@
+---
+source: crustrace-core/tests/negative.rs
+expression: apply_trace_all(input)
+---
+fn function_with_fn_param(callback: fn(i32) -> String) -> String {
+    let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "function_with_fn_param");
+    let __tracing_attr_guard = __tracing_attr_span.enter();
+    {
+        callback(42)
+    }
+}

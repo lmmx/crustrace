@@ -1,0 +1,11 @@
+---
+source: crustrace-core/tests/negative.rs
+expression: apply_trace_all(input)
+---
+fn returns_fn() -> fn() -> i32 {
+    let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "returns_fn");
+    let __tracing_attr_guard = __tracing_attr_span.enter();
+    {
+        || 42
+    }
+}
