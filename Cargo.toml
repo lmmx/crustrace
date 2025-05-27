@@ -1,7 +1,17 @@
 [workspace]
-members = ["crustrace", "crustrace-core", "examples/fib"]
+members = [
+  "crustrace",
+  "crustrace-attributes",
+  "crustrace-core",
+  "examples/fib",
+]
 resolver = "2"
 
 [workspace.dependencies]
+insta = "1.0"
 proc-macro2 = "1.0"
 quote = "1.0"
+rust-format = { features = ["proc-macro2", "token_stream"], version = "0.3.4" }
+tracing = { default-features = false, version = "0.1.41" }
+tracing-subscriber = { default-features = false, version = "0.3" }
+unsynn = { default-features = false, version = "0.1.1" }
