@@ -28,6 +28,12 @@ clippy:
 test *args:
     cargo nextest run {{args}} < /dev/null
 
+example-instrument:
+    cargo run --bin instrument_fib
+
+example-omni:
+    cargo run --bin omni_fib
+
 test-ci *args:
     #!/usr/bin/env -S bash -euo pipefail
     source .envrc

@@ -1,4 +1,4 @@
-use fib_new::*;
+use instrument_fib::*;
 
 fn main() {
     // Initialize tracing subscriber to see the spans

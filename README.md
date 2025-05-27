@@ -50,12 +50,12 @@ tracing-subscriber = "0.3"
 
 ### Basic Usage
 
-Apply the `#[trace_all]` attribute to any module:
+Apply the `#[omni]` attribute to any module:
 
 ```rust
-use crustrace::trace_all;
+use crustrace::omni;
 
-#[trace_all]
+#[omni]
 mod my_functions {
     fn foo(x: i32) -> i32 {
         bar(x * 2)
@@ -71,7 +71,7 @@ mod my_functions {
 }
 ```
 
-or more typically, by putting `#![trace_all]` (note the `!`) at the top of a module not declared by a `mod` block.
+or more typically, by putting `#![omni]` (note the `!`) at the top of a module not declared by a `mod` block.
 
 All functions in the module are then automatically instrumented as if you had written:
 
@@ -91,16 +91,16 @@ fn baz(z: i32) -> i32 { ... }
 `crustrace::instrument` is a `syn`-free (simpler, yet functional!) version
 of the `tracing-attributes::instrument` macro.
 
-In turn, `crustrace::trace_all` no longer uses `tracing::instrument`, it is
+In turn, `crustrace::omni` no longer uses `tracing::instrument`, it is
 entirely using `crustrace::instrument`.
 
 ### Complete Example
 
 ```rust
-use crustrace::trace_all;
+use crustrace::omni;
 use tracing_subscriber;
 
-#[trace_all]
+#[omni]
 mod calculations {
     fn fibonacci(n: u64) -> u64 {
         if n <= 1 {

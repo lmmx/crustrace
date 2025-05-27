@@ -46,7 +46,7 @@ fn instrument_functions(input: TokenStream) -> TokenStream {
                     if *fn_ident == "fn" {
                         // Insert attribute before pub
                         let instrument = quote! {
-                            #[tracing::instrument(level = "info", ret)]
+                            #[crustrace::instrument(level = "info", ret)]
                         };
                         output.extend(instrument);
                     }
