@@ -2,7 +2,7 @@
 #![warn(clippy::std_instead_of_core)]
 #![warn(clippy::std_instead_of_alloc)]
 #![forbid(unsafe_code)]
-#![doc = include_str!("../../README.md")]
+#![doc = include_str!("../README.md")]
 
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
