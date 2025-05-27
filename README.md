@@ -91,6 +91,9 @@ fn baz(z: i32) -> i32 { ... }
 There is now a `crustrace-attributes` crate exposing a `syn`-free (simpler, yet functional!) version
 of the `tracing-attributes::instrument` macro. In turn this can get exported from the `crustrace` crate...
 
+It no longer uses `tracing::instrument` and now is entirely using `crustrace-attributes::instrument`
+(which will be re-exported so it can be referred to as simply `crustrace::instrument`).
+
 ### Complete Example
 
 ```rust
