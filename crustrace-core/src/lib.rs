@@ -1,6 +1,9 @@
 use proc_macro2::{Group, TokenStream, TokenTree};
 use quote::quote;
 
+mod tracer;
+pub use tracer::instrument_impl;
+
 pub fn trace_all_impl(input: TokenStream) -> TokenStream {
     let mut tokens = input.clone().into_iter().peekable();
 
@@ -69,7 +72,7 @@ fn instrument_functions(input: TokenStream) -> TokenStream {
                 if not_preceded_by_pub {
                     // Insert attribute before fn
                     let instrument = quote! {
-                        #[crustrace_attributes::instrument(level = "info", ret)]
+                        #[crustrace::instrument(level = "info", ret)]
                     };
                     output.extend(instrument);
                 }

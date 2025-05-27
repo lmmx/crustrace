@@ -4,6 +4,6 @@ name = "fib_new"
 version = "0.1.0"
 
 [dependencies]
-crustrace-attributes.workspace = true
+crustrace.workspace = true
 tracing = { default-features = false, version = "0.1" }
 tracing-subscriber = "0.3"

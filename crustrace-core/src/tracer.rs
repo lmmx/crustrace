@@ -3,62 +3,14 @@
 //! This crate provides the [`#[instrument]`] attribute macro using `unsynn` for parsing,
 //! offering a lightweight alternative to the standard `tracing-attributes` crate.
 
-use proc_macro::TokenStream;
-use proc_macro2::TokenStream as TokenStream2;
+use proc_macro2::TokenStream;
 use quote::quote;
 use unsynn::*;
 
-/// Instruments a function to create and enter a `tracing` [span] every time
-/// the function is called.
-///
-/// Unless overridden, a span with `info` level will be generated.
-/// The generated span's name will be the name of the function.
-/// By default, all arguments to the function are included as fields on the span.
-///
-/// # Examples
-///
-/// Instrumenting a function:
-/// ```
-/// # use crustrace_attributes::instrument;
-/// #[instrument]
-/// pub fn my_function(my_arg: usize) {
-///     // This creates a span named `my_function` with field `my_arg`
-///     println!("inside my_function!");
-/// }
-/// ```
-///
-/// Setting the level for the generated span:
-/// ```
-/// # use crustrace_attributes::instrument;
-/// #[instrument(level = "debug")]
-/// pub fn my_function() {
-///     // Creates a DEBUG level span
-/// }
-/// ```
-///
-/// Overriding the generated span's name:
-/// ```
-/// # use crustrace_attributes::instrument;
-/// #[instrument(name = "my_custom_name")]
-/// pub fn my_function() {
-///     // Creates a span named `my_custom_name`
-/// }
-/// ```
-#[proc_macro_attribute]
-pub fn instrument(args: TokenStream, item: TokenStream) -> TokenStream {
-    let args2: TokenStream2 = args.into();
-    let item2: TokenStream2 = item.into();
-
-    match instrument_impl(args2, item2) {
-        Ok(tokens) => tokens.into(),
-        Err(error_tokens) => error_tokens.into(),
-    }
-}
-
-fn instrument_impl(
-    args: TokenStream2,
-    item: TokenStream2,
-) -> std::result::Result<TokenStream2, TokenStream2> {
+pub fn instrument_impl(
+    args: TokenStream,
+    item: TokenStream,
+) -> std::result::Result<TokenStream, TokenStream> {
     // Parse the instrument arguments
     let mut args_iter = args.to_token_iter();
     let instrument_args = if args.is_empty() {
@@ -87,13 +39,13 @@ struct InstrumentArgs {
 }
 
 struct SimpleFunction {
-    attrs: Vec<TokenStream2>,
-    vis: Option<TokenStream2>,
+    attrs: Vec<TokenStream>,
+    vis: Option<TokenStream>,
     fn_name: proc_macro2::Ident,
-    generics: Option<TokenStream2>,
-    params: TokenStream2,
-    ret_type: Option<TokenStream2>,
-    body: TokenStream2,
+    generics: Option<TokenStream>,
+    params: TokenStream,
+    ret_type: Option<TokenStream>,
+    body: TokenStream,
 }
 
 fn parse_instrument_args(input: &mut TokenIter) -> std::result::Result<InstrumentArgs, String> {
@@ -133,7 +85,7 @@ fn parse_simple_function(input: &mut TokenIter) -> std::result::Result<SimpleFun
     // Parse attributes (#[...])
     while Operator::<'#'>::parse(input).is_ok() {
         if let Ok(bracket_group) = BracketGroup::parse(input) {
-            let mut attr_tokens = TokenStream2::new();
+            let mut attr_tokens = TokenStream::new();
             Operator::<'#'>::new().to_tokens(&mut attr_tokens);
             bracket_group.to_tokens(&mut attr_tokens);
             attrs.push(attr_tokens);
@@ -147,7 +99,7 @@ fn parse_simple_function(input: &mut TokenIter) -> std::result::Result<SimpleFun
     };
 
     let fn_kw = if first_ident == "pub" {
-        let mut vis_tokens = TokenStream2::new();
+        let mut vis_tokens = TokenStream::new();
         first_ident.to_tokens(&mut vis_tokens);
 
         // Check for pub(crate), pub(super), etc.
@@ -189,13 +141,13 @@ fn parse_simple_function(input: &mut TokenIter) -> std::result::Result<SimpleFun
         Ok(group) => group,
         Err(_) => return Err("Expected function parameters".to_string()),
     };
-    let mut params = TokenStream2::new();
+    let mut params = TokenStream::new();
     params_group.to_tokens(&mut params);
 
     // Parse optional return type
     let mut ret_type = None;
     if Operator::<'-', '>'>::parse(input).is_ok() {
-        let mut ret_tokens = TokenStream2::new();
+        let mut ret_tokens = TokenStream::new();
         Operator::<'-', '>'>::new().to_tokens(&mut ret_tokens);
 
         // Collect tokens until we see a brace, but don't consume the brace
@@ -244,7 +196,7 @@ fn parse_simple_function(input: &mut TokenIter) -> std::result::Result<SimpleFun
                         if group.delimiter() == Delimiter::Brace {
                             eprintln!("It IS a brace group! Using it directly.");
                             // Use this group directly
-                            let mut body = TokenStream2::new();
+                            let mut body = TokenStream::new();
                             group.to_tokens(&mut body);
 
                             return Ok(SimpleFunction {
@@ -267,7 +219,7 @@ fn parse_simple_function(input: &mut TokenIter) -> std::result::Result<SimpleFun
     };
 
     // Handle the successful BraceGroup::parse case
-    let mut body = TokenStream2::new();
+    let mut body = TokenStream::new();
     body_group.to_tokens(&mut body);
 
     Ok(SimpleFunction {
@@ -281,10 +233,10 @@ fn parse_simple_function(input: &mut TokenIter) -> std::result::Result<SimpleFun
     })
 }
 
-fn parse_angle_brackets(input: &mut TokenIter) -> unsynn::Result<TokenStream2> {
+fn parse_angle_brackets(input: &mut TokenIter) -> unsynn::Result<TokenStream> {
     // Look for < ... > generics manually since unsynn doesn't have AngleBracketGroup
     if let Ok(lt) = Operator::<'<'>::parse(input) {
-        let mut generics = TokenStream2::new();
+        let mut generics = TokenStream::new();
         lt.to_tokens(&mut generics);
 
         let mut depth = 1;
@@ -307,7 +259,7 @@ fn parse_angle_brackets(input: &mut TokenIter) -> unsynn::Result<TokenStream2> {
     }
 }
 
-fn generate_instrumented_function(args: InstrumentArgs, func: SimpleFunction) -> TokenStream2 {
+fn generate_instrumented_function(args: InstrumentArgs, func: SimpleFunction) -> TokenStream {
     let SimpleFunction {
         attrs,
         vis,
@@ -361,7 +313,7 @@ fn generate_instrumented_function(args: InstrumentArgs, func: SimpleFunction) ->
 
 /// Extract parameter names from function parameters for tracing fields
 /// This is a simplified version that attempts basic parameter extraction
-fn extract_param_fields(params: &TokenStream2) -> TokenStream2 {
+fn extract_param_fields(params: &TokenStream) -> TokenStream {
     // Simple heuristic: look for identifiers that could be parameter names
     let params_clone = params.clone();
     let mut param_iter = params_clone.to_token_iter();

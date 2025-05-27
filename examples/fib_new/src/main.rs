@@ -10,7 +10,7 @@ fn main() {
         )
         .init();
 
-    println!("=== Testing crustrace-attributes ===");
+    println!("=== Testing crustrace ===");
 
     println!("\n1. Basic instrumentation:");
     let result = fibonacci(5);

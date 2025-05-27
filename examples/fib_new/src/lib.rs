@@ -1,4 +1,4 @@
-use crustrace_attributes::instrument;
+use crustrace::instrument;
 
 #[instrument]
 pub fn fibonacci(n: u64) -> u64 {

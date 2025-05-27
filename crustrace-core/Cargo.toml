@@ -7,6 +7,7 @@ version = "0.1.0"
 [dependencies]
 proc-macro2.workspace = true
 quote.workspace = true
+unsynn.workspace = true
 
 [dev-dependencies]
 insta.workspace = true

@@ -2,11 +2,11 @@
 source: crustrace-core/tests/basic.rs
 expression: apply_trace_all(input)
 ---
-#[crustrace_attributes::instrument(level = "info", ret)]
+#[crustrace::instrument(level = "info", ret)]
 fn foo(x: i32) -> i32 {
     bar(x + 1)
 }
-#[crustrace_attributes::instrument(level = "info", ret)]
+#[crustrace::instrument(level = "info", ret)]
 fn bar(y: i32) -> i32 {
     y * 2
 }
