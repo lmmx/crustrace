@@ -20,9 +20,9 @@ pub fn trace_all_impl(input: TokenStream) -> TokenStream {
                     // Reconstruct the module with processed contents
                     let mut output = TokenStream::new();
                     output.extend(quote! { mod });
-                    output.extend(std::iter::once(mod_name));
+                    output.extend(core::iter::once(mod_name));
                     let new_group = Group::new(group.delimiter(), processed_contents);
-                    output.extend(std::iter::once(TokenTree::Group(new_group)));
+                    output.extend(core::iter::once(TokenTree::Group(new_group)));
                     return output;
                 }
             }
@@ -79,7 +79,7 @@ fn instrument_functions(input: TokenStream) -> TokenStream {
             }
         }
 
-        output.extend(std::iter::once(tokens[i].clone()));
+        output.extend(core::iter::once(tokens[i].clone()));
         i += 1;
     }
 

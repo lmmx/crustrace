@@ -3,14 +3,12 @@
 //! This crate provides the [`#[instrument]`] attribute macro using `unsynn` for parsing,
 //! offering a lightweight alternative to the standard `tracing-attributes` crate.
 
+use core::result::Result;
 use proc_macro2::TokenStream;
 use quote::quote;
 use unsynn::*;
 
-pub fn instrument_impl(
-    args: TokenStream,
-    item: TokenStream,
-) -> std::result::Result<TokenStream, TokenStream> {
+pub fn instrument_impl(args: TokenStream, item: TokenStream) -> Result<TokenStream, TokenStream> {
     // Parse the instrument arguments
     let mut args_iter = args.to_token_iter();
     let instrument_args = if args.is_empty() {
@@ -48,7 +46,7 @@ struct SimpleFunction {
     body: TokenStream,
 }
 
-fn parse_instrument_args(input: &mut TokenIter) -> std::result::Result<InstrumentArgs, String> {
+fn parse_instrument_args(input: &mut TokenIter) -> Result<InstrumentArgs, String> {
     let mut args = InstrumentArgs::default();
 
     while let Ok(ident) = Ident::parse(input) {
@@ -78,7 +76,7 @@ fn parse_instrument_args(input: &mut TokenIter) -> std::result::Result<Instrumen
     Ok(args)
 }
 
-fn parse_simple_function(input: &mut TokenIter) -> std::result::Result<SimpleFunction, String> {
+fn parse_simple_function(input: &mut TokenIter) -> Result<SimpleFunction, String> {
     let mut attrs = Vec::new();
     let mut vis = None;
 
