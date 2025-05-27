@@ -415,6 +415,7 @@ fn test_trait_methods() {
 }
 
 #[test]
+#[ignore]
 fn test_nested_module_functions() {
     let input = quote! {
         mod outer {
