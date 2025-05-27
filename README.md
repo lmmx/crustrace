@@ -86,6 +86,43 @@ fn bar(y: i32) -> i32 { ... }
 fn baz(z: i32) -> i32 { ... }
 ```
 
+### Instrumenting Impl Blocks
+
+Crustrace also works on impl blocks, automatically instrumenting all methods:
+
+```rust
+use crustrace::omni;
+
+struct Calculator;
+
+#[omni]
+impl Calculator {
+    pub fn new() -> Self {
+        Self
+    }
+    
+    pub fn add(&self, a: i32, b: i32) -> i32 {
+        self.multiply(a, 1) + self.multiply(b, 1)
+    }
+    
+    pub fn multiply(&self, x: i32, y: i32) -> i32 {
+        x * y
+    }
+    
+    fn internal_helper(&self, value: i32) -> i32 {
+        value * 2
+    }
+}
+```
+
+All methods in the impl block get automatically instrumented, including:
+- Constructor methods like `new()`
+- Public methods with parameters
+- Private helper methods
+- Methods with generic parameters
+
+This gives you complete tracing of method calls within your types.
+
 **WORK IN PROGRESS**
 
 `crustrace::instrument` is a `syn`-free (simpler, yet functional!) version
@@ -169,6 +206,8 @@ The macro:
 - Regular functions: `fn foo() { ... }`
 - Generic functions: `fn foo<T>(x: T) { ... }`
 - Functions with complex signatures: `fn foo(x: impl Display) -> Result<String, Error> { ... }`
+- Methods in impl blocks: `impl MyStruct { fn method(&self) { ... } }`
+- Generic impl blocks: `impl<T> Container<T> { ... }`
 
 ### What Doesn't Get Instrumented
 

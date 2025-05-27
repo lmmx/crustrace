@@ -1,0 +1,5 @@
+---
+source: crustrace-core/tests/negative.rs
+expression: apply_trace_all(input)
+---
+type FnPointer = fn() -> i32;
