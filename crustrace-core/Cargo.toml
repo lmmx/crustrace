@@ -5,6 +5,7 @@ edition = "2024"
 homepage = "https://github.com/lmmx/crustrace"
 license = "MIT OR Apache-2.0"
 name = "crustrace-core"
+readme = "../../README.md"
 repository = "https://github.com/lmmx/crustrace"
 version = "0.1.0"
 
