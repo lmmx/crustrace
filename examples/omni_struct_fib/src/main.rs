@@ -1,4 +1,4 @@
-use omni_fib::*;
+use omni_fib_struct::*;
 
 fn main() {
     // Initialize tracing subscriber to see the spans
@@ -12,15 +12,17 @@ fn main() {
 
     println!("=== Testing crustrace::instrument ===");
 
+    let calc = Calculator;
+
     println!("\n1. fibonacci(5):");
-    let result = fibonacci(5);
+    let result = calc.fibonacci(5);
     println!("fibonacci(5) = {}", result);
 
     println!("\n2. multiply(6, 7):");
-    let product = multiply(6, 7);
+    let product = calc.multiply(6, 7);
     println!("multiply(6, 7) = {}", product);
 
     println!("\n3. add_numbers(10, 20):");
-    let sum = add_numbers(10, 20);
+    let sum = calc.add_numbers(10, 20);
     println!("add_numbers(10, 20) = {}", sum);
 }

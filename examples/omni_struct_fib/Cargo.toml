@@ -1,6 +1,6 @@
 [package]
 edition = "2024"
-name = "omni_fib"
+name = "omni_fib_struct"
 publish = false
 version = "0.1.0"
 

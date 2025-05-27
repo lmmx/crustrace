@@ -31,8 +31,11 @@ test *args:
 example-instrument:
     cargo run --bin instrument_fib
 
-example-omni:
-    cargo run --bin omni_fib
+example-omni-mod:
+    cargo run --bin omni_fib_mod
+
+example-omni-struct:
+    cargo run --bin omni_fib_struct
 
 test-ci *args:
     #!/usr/bin/env -S bash -euo pipefail

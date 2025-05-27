@@ -3,7 +3,8 @@ members = [
   "crustrace",
   "crustrace-core",
   "examples/instrument_fib",
-  "examples/omni_fib",
+  "examples/omni_mod_fib",
+  "examples/omni_struct_fib",
 ]
 resolver = "2"
 
