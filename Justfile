@@ -110,8 +110,9 @@ ship:
     just publish
 
 publish:
-    git_token := $(gh auth token 2>/dev/null) || echo $PUBLISH_GITHUB_TOKEN
-    release-plz release --backend github --git-token $git_token
+    #!/usr/bin/env -S bash -euo pipefail
+    git_token=$(gh auth token 2>/dev/null || echo ${PUBLISH_GITHUB_TOKEN:-""})
+    release-plz release --backend github --git-token "$git_token"
 
 docsrs *args:
     #!/usr/bin/env -S bash -eux
