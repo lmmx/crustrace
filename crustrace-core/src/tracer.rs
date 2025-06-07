@@ -8,6 +8,8 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use unsynn::*;
 
+use crate::parse::{InstrumentArg, InstrumentInner};
+
 pub fn instrument_impl(args: TokenStream, item: TokenStream) -> Result<TokenStream, TokenStream> {
     // Parse the instrument arguments
     let mut args_iter = args.to_token_iter();
@@ -47,33 +49,27 @@ struct SimpleFunction {
 }
 
 fn parse_instrument_args(input: &mut TokenIter) -> Result<InstrumentArgs, String> {
-    let mut args = InstrumentArgs::default();
+    match input.parse::<InstrumentInner>() {
+        Ok(parsed) => {
+            let mut args = InstrumentArgs::default();
 
-    while let Ok(ident) = Ident::parse(input) {
-        let ident_str = ident.to_string();
-
-        if ident_str == "level" {
-            if Operator::<'='>::parse(input).is_ok() {
-                if let Ok(level_lit) = LiteralString::parse(input) {
-                    args.level = Some(level_lit.as_str().to_string());
+            if let Some(arg_list) = parsed.args {
+                for arg in arg_list.0 {
+                    match arg.value {
+                        InstrumentArg::Level(level_arg) => {
+                            args.level = Some(level_arg.value.as_str().to_string());
+                        }
+                        InstrumentArg::Name(name_arg) => {
+                            args.name = Some(name_arg.value.as_str().to_string());
+                        }
+                    }
                 }
             }
-        } else if ident_str == "name" && Operator::<'='>::parse(input).is_ok() {
-            if let Ok(name_lit) = LiteralString::parse(input) {
-                args.name = Some(name_lit.as_str().to_string());
-            }
-        }
 
-        // Skip optional comma
-        let _ = Comma::parse(input);
-
-        // Prevent infinite loop
-        if input.counter() > 100 {
-            break;
+            Ok(args)
         }
+        Err(e) => Err(format!("Failed to parse instrument args: {}", e)),
     }
-
-    Ok(args)
 }
 
 fn parse_simple_function(input: &mut TokenIter) -> Result<SimpleFunction, String> {

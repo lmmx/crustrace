@@ -1,4 +1,5 @@
 mod function_extractor;
+mod parse;
 mod token_processors;
 
 mod tracer;
