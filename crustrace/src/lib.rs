@@ -2,7 +2,13 @@
 #![warn(clippy::std_instead_of_core)]
 #![warn(clippy::std_instead_of_alloc)]
 #![forbid(unsafe_code)]
-#![doc = include_str!("../README.md")]
+// #![doc = include_str!("../README.md")]
+
+//! # Crustrace
+//!
+//! A procedural macro crate for instrumenting Rust functions with tracing spans.
+//!
+//! This crate provides macros to automatically add tracing instrumentation to your functions.
 
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
