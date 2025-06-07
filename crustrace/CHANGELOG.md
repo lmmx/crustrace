@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1](https://github.com/lmmx/crustrace/compare/crustrace-v0.1.0...crustrace-v0.1.1) - 2025-06-07
+
+### <!-- 2 -->Bug Fixes
+
+- amend README metadata
+
+### <!-- 9 -->Other
+
+- license
+
 ## [0.1.0](https://github.com/lmmx/crustrace/releases/tag/crustrace-v0.1.0) - 2025-05-27
 
 ### <!-- 1 -->Features

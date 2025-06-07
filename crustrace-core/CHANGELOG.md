@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1](https://github.com/lmmx/crustrace/compare/crustrace-core-v0.1.0...crustrace-core-v0.1.1) - 2025-06-07
+
+### <!-- 2 -->Bug Fixes
+
+- amend README metadata
+
+### <!-- 7 -->Build System and CI
+
+- README meta
+
+### <!-- 9 -->Other
+
+- license
+- publishable crate yet?
+- another one
+- please accept my humble README o crates.io
+- amend
+
 ## [0.1.0](https://github.com/lmmx/crustrace/releases/tag/crustrace-core-v0.1.0) - 2025-05-27
 
 ### <!-- 1 -->Features

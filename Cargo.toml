@@ -16,8 +16,8 @@ rust-version = "1.87.0"
 
 [workspace.dependencies]
 cargo-husky = { version = "1.5.0", default-features = false }
-crustrace = { version = "0.1.0", path = "crustrace" }
-crustrace-core = { version = "0.1.0", path = "crustrace-core" }
+crustrace = { version = "0.1.1", path = "crustrace" }
+crustrace-core = { version = "0.1.1", path = "crustrace-core" }
 insta = "1.0"
 proc-macro2 = "1.0"
 quote = "1.0"
