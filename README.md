@@ -1,9 +1,9 @@
 # Crustrace
 
 <!-- [![CodeCov Status](https://codecov.io/gh/lmmx/crustrace/graph/badge.svg?token=UCFLM1MD9D)](https://codecov.io/gh/lmmx/crustrace) -->
-<!-- [![crates.io](https://img.shields.io/crates/v/crustrace.svg)](https://crates.io/crates/crustrace) -->
-<!-- [![documentation](https://docs.rs/crustrace/badge.svg)](https://docs.rs/crustrace) -->
 <!-- [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/lmmx/crustrace/binaries.yml)](https://github.com/lmmx/crustrace/actions/workflows/binaries.yml) -->
+[![crates.io](https://img.shields.io/crates/v/crustrace.svg)](https://crates.io/crates/crustrace)
+[![documentation](https://docs.rs/crustrace/badge.svg)](https://docs.rs/crustrace)
 [![free of syn](https://img.shields.io/badge/free%20of-syn-hotpink)](https://github.com/fasterthanlime/free-of-syn)
 [![MIT/Apache-2.0 licensed](https://img.shields.io/crates/l/crustrace.svg)](./LICENSE)
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/lmmx/crustrace/master.svg)](https://results.pre-commit.ci/latest/github/lmmx/crustrace/master)
