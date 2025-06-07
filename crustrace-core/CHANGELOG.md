@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2](https://github.com/lmmx/crustrace/compare/crustrace-core-v0.1.1...crustrace-core-v0.1.2) - 2025-06-07
+
+### <!-- 5 -->Refactor
+
+- use declarative unsynn parsing not imperative style ([#9](https://github.com/lmmx/crustrace/pull/9))
+
 ## [0.1.1](https://github.com/lmmx/crustrace/compare/crustrace-core-v0.1.0...crustrace-core-v0.1.1) - 2025-06-07
 
 ### <!-- 2 -->Bug Fixes
