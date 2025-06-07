@@ -8,6 +8,8 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use unsynn::*;
 
+use crate::parse::{FnSig, InstrumentArg, InstrumentInner};
+
 pub fn instrument_impl(args: TokenStream, item: TokenStream) -> Result<TokenStream, TokenStream> {
     // Parse the instrument arguments
     let mut args_iter = args.to_token_iter();
@@ -39,221 +41,137 @@ struct InstrumentArgs {
 struct SimpleFunction {
     attrs: Vec<TokenStream>,
     vis: Option<TokenStream>,
+    const_kw: Option<TokenStream>,
+    async_kw: Option<TokenStream>,
+    unsafe_kw: Option<TokenStream>,
+    extern_kw: Option<TokenStream>,
     fn_name: proc_macro2::Ident,
     generics: Option<TokenStream>,
     params: TokenStream,
     ret_type: Option<TokenStream>,
+    where_clause: Option<TokenStream>,
     body: TokenStream,
 }
 
 fn parse_instrument_args(input: &mut TokenIter) -> Result<InstrumentArgs, String> {
-    let mut args = InstrumentArgs::default();
+    match input.parse::<InstrumentInner>() {
+        Ok(parsed) => {
+            let mut args = InstrumentArgs::default();
 
-    while let Ok(ident) = Ident::parse(input) {
-        let ident_str = ident.to_string();
-
-        if ident_str == "level" {
-            if Operator::<'='>::parse(input).is_ok() {
-                if let Ok(level_lit) = LiteralString::parse(input) {
-                    args.level = Some(level_lit.as_str().to_string());
+            if let Some(arg_list) = parsed.args {
+                for arg in arg_list.0 {
+                    match arg.value {
+                        InstrumentArg::Level(level_arg) => {
+                            args.level = Some(level_arg.value.as_str().to_string());
+                        }
+                        InstrumentArg::Name(name_arg) => {
+                            args.name = Some(name_arg.value.as_str().to_string());
+                        }
+                    }
                 }
             }
-        } else if ident_str == "name" && Operator::<'='>::parse(input).is_ok() {
-            if let Ok(name_lit) = LiteralString::parse(input) {
-                args.name = Some(name_lit.as_str().to_string());
-            }
-        }
 
-        // Skip optional comma
-        let _ = Comma::parse(input);
-
-        // Prevent infinite loop
-        if input.counter() > 100 {
-            break;
+            Ok(args)
         }
+        Err(e) => Err(format!("Failed to parse instrument args: {}", e)),
     }
-
-    Ok(args)
 }
 
 fn parse_simple_function(input: &mut TokenIter) -> Result<SimpleFunction, String> {
-    let mut attrs = Vec::new();
-    let mut vis = None;
-
-    // Parse attributes (#[...])
-    while Operator::<'#'>::parse(input).is_ok() {
-        if let Ok(bracket_group) = BracketGroup::parse(input) {
-            let mut attr_tokens = TokenStream::new();
-            Operator::<'#'>::new().to_tokens(&mut attr_tokens);
-            bracket_group.to_tokens(&mut attr_tokens);
-            attrs.push(attr_tokens);
-        }
-    }
-
-    // Parse visibility (pub, pub(crate), etc.) or fn
-    let first_ident = match Ident::parse(input) {
-        Ok(ident) => ident,
-        Err(_) => return Err("Expected 'pub' or 'fn' keyword".to_string()),
-    };
-
-    let fn_kw = if first_ident == "pub" {
-        let mut vis_tokens = TokenStream::new();
-        first_ident.to_tokens(&mut vis_tokens);
-
-        // Check for pub(crate), pub(super), etc.
-        if let Ok(paren_group) = ParenthesisGroup::parse(input) {
-            paren_group.to_tokens(&mut vis_tokens);
-        }
-
-        vis = Some(vis_tokens);
-
-        // Now parse the fn keyword
-        match Ident::parse(input) {
-            Ok(ident) => ident,
-            Err(_) => return Err("Expected 'fn' keyword after visibility".to_string()),
-        }
-    } else if first_ident == "fn" {
-        // No visibility, this is the fn keyword
-        first_ident
-    } else {
-        return Err(format!("Expected 'pub' or 'fn', found '{}'", first_ident));
-    };
-    if fn_kw != "fn" {
-        return Err("Expected 'fn' keyword".to_string());
-    }
-
-    // Parse function name
-    let fn_name = match Ident::parse(input) {
-        Ok(ident) => ident,
-        Err(_) => return Err("Expected function name".to_string()),
-    };
-
-    // Parse optional generics
-    let mut generics = None;
-    if let Ok(angle_group) = parse_angle_brackets(input) {
-        generics = Some(angle_group);
-    }
-
-    // Parse parameters
-    let params_group = match ParenthesisGroup::parse(input) {
-        Ok(group) => group,
-        Err(_) => return Err("Expected function parameters".to_string()),
-    };
-    let mut params = TokenStream::new();
-    params_group.to_tokens(&mut params);
-
-    // Parse optional return type
-    let mut ret_type = None;
-    if Operator::<'-', '>'>::parse(input).is_ok() {
-        let mut ret_tokens = TokenStream::new();
-        Operator::<'-', '>'>::new().to_tokens(&mut ret_tokens);
-
-        // Collect tokens until we see a brace, but don't consume the brace
-        loop {
-            let mut cloned_input = input.clone();
-            if let Ok(next_token) = TokenTree::parse(&mut cloned_input) {
-                if let TokenTree::Group(ref group) = next_token {
-                    if group.delimiter() == Delimiter::Brace {
-                        // Stop here, don't consume the brace
-                        break;
-                    }
-                }
-                // Consume and add the token from the real input
-                if let Ok(token) = TokenTree::parse(input) {
-                    token.to_tokens(&mut ret_tokens);
-                } else {
-                    break;
-                }
+    match input.parse::<FnSig>() {
+        Ok(parsed) => {
+            // Handle attributes
+            let attrs = if let Some(attr_list) = parsed.attributes {
+                attr_list
+                    .0
+                    .into_iter()
+                    .map(|attr| {
+                        let mut tokens = TokenStream::new();
+                        unsynn::ToTokens::to_tokens(&attr, &mut tokens);
+                        tokens
+                    })
+                    .collect()
             } else {
-                break;
-            }
+                Vec::new()
+            };
+
+            // Handle visibility
+            let vis = parsed.visibility.map(|v| {
+                let mut tokens = TokenStream::new();
+                quote::ToTokens::to_tokens(&v, &mut tokens);
+                tokens
+            });
+
+            // Handle const keyword
+            let const_kw = parsed.const_kw.map(|k| {
+                let mut tokens = TokenStream::new();
+                unsynn::ToTokens::to_tokens(&k, &mut tokens);
+                tokens
+            });
+
+            // Handle async keyword
+            let async_kw = parsed.async_kw.map(|k| {
+                let mut tokens = TokenStream::new();
+                unsynn::ToTokens::to_tokens(&k, &mut tokens);
+                tokens
+            });
+
+            // Handle unsafe keyword
+            let unsafe_kw = parsed.unsafe_kw.map(|k| {
+                let mut tokens = TokenStream::new();
+                unsynn::ToTokens::to_tokens(&k, &mut tokens);
+                tokens
+            });
+
+            // Handle extern keyword
+            let extern_kw = parsed.extern_kw.map(|k| {
+                let mut tokens = TokenStream::new();
+                unsynn::ToTokens::to_tokens(&k, &mut tokens);
+                tokens
+            });
+
+            let fn_name = parsed.name;
+
+            let generics = parsed.generics.map(|g| {
+                let mut tokens = TokenStream::new();
+                unsynn::ToTokens::to_tokens(&g, &mut tokens);
+                tokens
+            });
+
+            let mut params = TokenStream::new();
+            unsynn::ToTokens::to_tokens(&parsed.params, &mut params);
+
+            let ret_type = parsed.return_type.map(|rt| {
+                let mut tokens = TokenStream::new();
+                unsynn::ToTokens::to_tokens(&rt, &mut tokens);
+                tokens
+            });
+
+            let where_clause = parsed.where_clause.map(|wc| {
+                let mut tokens = TokenStream::new();
+                unsynn::ToTokens::to_tokens(&wc, &mut tokens);
+                tokens
+            });
+
+            let mut body = TokenStream::new();
+            unsynn::ToTokens::to_tokens(&parsed.body, &mut body);
+
+            Ok(SimpleFunction {
+                attrs,
+                vis,
+                const_kw,
+                async_kw,
+                unsafe_kw,
+                extern_kw,
+                fn_name,
+                generics,
+                params,
+                ret_type,
+                where_clause,
+                body,
+            })
         }
-        ret_type = Some(ret_tokens);
-    }
-
-    // Parse function body - if we consumed a brace in return type parsing, handle that
-    // println!(
-    //     "Remaining tokens before body parsing: {}",
-    //     input.to_token_stream()
-    // );
-
-    let body_group = match BraceGroup::parse(input) {
-        Ok(group) => {
-            // println!("Successfully parsed body group");
-            group
-        }
-        Err(e) => {
-            eprintln!("Failed to parse body group: {:?}", e);
-
-            // Try to see what the next token actually is
-            if let Ok(next_token) = TokenTree::parse(input) {
-                eprintln!("Next token is: {:?}", next_token);
-                match next_token {
-                    TokenTree::Group(group) => {
-                        eprintln!("It's a group with delimiter: {:?}", group.delimiter());
-                        if group.delimiter() == Delimiter::Brace {
-                            eprintln!("It IS a brace group! Using it directly.");
-                            // Use this group directly
-                            let mut body = TokenStream::new();
-                            group.to_tokens(&mut body);
-
-                            return Ok(SimpleFunction {
-                                attrs,
-                                vis,
-                                fn_name,
-                                generics,
-                                params,
-                                ret_type,
-                                body,
-                            });
-                        }
-                    }
-                    _ => eprintln!("It's not a group"),
-                }
-            }
-
-            return Err("Expected function body".to_string());
-        }
-    };
-
-    // Handle the successful BraceGroup::parse case
-    let mut body = TokenStream::new();
-    body_group.to_tokens(&mut body);
-
-    Ok(SimpleFunction {
-        attrs,
-        vis,
-        fn_name,
-        generics,
-        params,
-        ret_type,
-        body,
-    })
-}
-
-fn parse_angle_brackets(input: &mut TokenIter) -> unsynn::Result<TokenStream> {
-    // Look for < ... > generics manually since unsynn doesn't have AngleBracketGroup
-    if let Ok(lt) = Operator::<'<'>::parse(input) {
-        let mut generics = TokenStream::new();
-        lt.to_tokens(&mut generics);
-
-        let mut depth = 1;
-        while depth > 0 {
-            if let Ok(token) = TokenTree::parse(input) {
-                match &token {
-                    TokenTree::Punct(p) if p.as_char() == '<' => depth += 1,
-                    TokenTree::Punct(p) if p.as_char() == '>' => depth -= 1,
-                    _ => {}
-                }
-                token.to_tokens(&mut generics);
-            } else {
-                break;
-            }
-        }
-
-        Ok(generics)
-    } else {
-        Err(Error::unexpected_token(input)?)
+        Err(e) => Err(format!("Failed to parse function: {}", e)),
     }
 }
 
@@ -261,10 +179,15 @@ fn generate_instrumented_function(args: InstrumentArgs, func: SimpleFunction) ->
     let SimpleFunction {
         attrs,
         vis,
+        const_kw,
+        async_kw,
+        unsafe_kw,
+        extern_kw,
         fn_name,
         generics,
         params,
         ret_type,
+        where_clause,
         body,
     } = func;
 
@@ -287,16 +210,25 @@ fn generate_instrumented_function(args: InstrumentArgs, func: SimpleFunction) ->
     // Generate visibility tokens
     let vis_tokens = vis.unwrap_or_default();
 
+    // Generate modifier tokens
+    let const_tokens = const_kw.unwrap_or_default();
+    let async_tokens = async_kw.unwrap_or_default();
+    let unsafe_tokens = unsafe_kw.unwrap_or_default();
+    let extern_tokens = extern_kw.unwrap_or_default();
+
     // Generate generics tokens
     let generics_tokens = generics.unwrap_or_default();
 
     // Generate return type tokens
     let ret_tokens = ret_type.unwrap_or_default();
 
+    // Generate where clause tokens
+    let where_tokens = where_clause.unwrap_or_default();
+
     // Generate the instrumented function
     quote! {
         #(#attrs)*
-        #vis_tokens fn #fn_name #generics_tokens #params #ret_tokens {
+        #vis_tokens #const_tokens #async_tokens #unsafe_tokens #extern_tokens fn #fn_name #generics_tokens #params #ret_tokens #where_tokens {
             let __tracing_attr_span = tracing::span!(
                 #level,
                 #span_name
@@ -413,5 +345,81 @@ mod tests {
         let output_str = format_and_print(output);
 
         assert!(output_str.contains("\"custom_span\""));
+    }
+
+    #[test]
+    fn test_async_function() {
+        let args = quote!();
+        let item = quote! {
+            async fn test_async() {
+                println!("async test");
+            }
+        };
+
+        let result = instrument_impl(args, item);
+        assert!(result.is_ok());
+
+        let output = result.unwrap();
+        let output_str = format_and_print(output);
+
+        assert!(output_str.contains("async fn test_async"));
+        assert!(output_str.contains("tracing::span!"));
+    }
+
+    #[test]
+    fn test_unsafe_function() {
+        let args = quote!();
+        let item = quote! {
+            unsafe fn test_unsafe() {
+                println!("unsafe test");
+            }
+        };
+
+        let result = instrument_impl(args, item);
+        assert!(result.is_ok());
+
+        let output = result.unwrap();
+        let output_str = format_and_print(output);
+
+        assert!(output_str.contains("unsafe fn test_unsafe"));
+        assert!(output_str.contains("tracing::span!"));
+    }
+
+    #[test]
+    fn test_const_function() {
+        let args = quote!();
+        let item = quote! {
+            const fn test_const() {
+
+            }
+        };
+
+        let result = instrument_impl(args, item);
+        assert!(result.is_ok());
+
+        let output = result.unwrap();
+        let output_str = format_and_print(output);
+
+        assert!(output_str.contains("const fn test_const"));
+        assert!(output_str.contains("tracing::span!"));
+    }
+
+    #[test]
+    fn test_pub_async_function() {
+        let args = quote!();
+        let item = quote! {
+            pub async fn test_pub_async() {
+                println!("pub async test");
+            }
+        };
+
+        let result = instrument_impl(args, item);
+        assert!(result.is_ok());
+
+        let output = result.unwrap();
+        let output_str = format_and_print(output);
+
+        assert!(output_str.contains("pub async fn test_pub_async"));
+        assert!(output_str.contains("tracing::span!"));
     }
 }
