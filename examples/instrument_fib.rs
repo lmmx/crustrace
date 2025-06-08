@@ -28,6 +28,11 @@ fn add_numbers(x: i32, y: i32) -> i32 {
     x + y
 }
 
+#[instrument(ret)]
+pub fn hello(target: &str) -> String {
+    format!("Hello {}", target)
+}
+
 fn main() {
     // Initialize tracing subscriber to see the spans
     tracing_subscriber::fmt()
@@ -51,4 +56,8 @@ fn main() {
     println!("\n3. Custom span name:");
     let sum = add_numbers(10, 20);
     println!("add_numbers(10, 20) = {}", sum);
+
+    println!("\n4. Return value:");
+    let greeting = hello("world");
+    println!(r#"hello("world") = {}"#, greeting);
 }

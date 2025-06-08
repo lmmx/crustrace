@@ -37,6 +37,7 @@ pub fn instrument_impl(args: TokenStream, item: TokenStream) -> Result<TokenStre
 struct InstrumentArgs {
     level: Option<String>,
     name: Option<String>,
+    ret: bool,
 }
 
 struct SimpleFunction {
@@ -67,6 +68,9 @@ fn parse_instrument_args(input: &mut TokenIter) -> Result<InstrumentArgs, String
                         }
                         InstrumentArg::Name(name_arg) => {
                             args.name = Some(name_arg.value.as_str().to_string());
+                        }
+                        InstrumentArg::Ret(_) => {
+                            args.ret = true;
                         }
                     }
                 }
@@ -226,6 +230,17 @@ fn generate_instrumented_function(args: InstrumentArgs, func: SimpleFunction) ->
     // Generate where clause tokens
     let where_tokens = where_clause.unwrap_or_default();
 
+    // Generate the body handling based on whether ret is enabled
+    let body_handling = if args.ret {
+        quote! {
+            let __tracing_attr_ret = (|| #body)();
+            tracing::event!(#level, return_value = ?__tracing_attr_ret);
+            __tracing_attr_ret
+        }
+    } else {
+        body
+    };
+
     // Generate the instrumented function
     quote! {
         #(#attrs)*
@@ -237,7 +252,7 @@ fn generate_instrumented_function(args: InstrumentArgs, func: SimpleFunction) ->
             );
             let __tracing_attr_guard = __tracing_attr_span.enter();
 
-            #body
+            #body_handling
         }
     }
 }
