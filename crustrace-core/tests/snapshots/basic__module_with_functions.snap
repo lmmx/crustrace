@@ -4,7 +4,7 @@ expression: apply_trace_all(input)
 ---
 mod calculations {
     pub fn fibonacci(n: u64) -> u64 {
-        let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "fibonacci");
+        let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "fibonacci", n = n);
         let __tracing_attr_guard = __tracing_attr_span.enter();
         {
             if n <= 1 {
@@ -15,7 +15,7 @@ mod calculations {
         }
     }
     fn add_numbers(a: u64, b: u64) -> u64 {
-        let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "add_numbers");
+        let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "add_numbers", a = a, b = b);
         let __tracing_attr_guard = __tracing_attr_span.enter();
         {
             a + b

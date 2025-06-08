@@ -7,7 +7,7 @@ where
     T: Clone + std::fmt::Debug,
 {
     pub fn new(value: T) -> Self {
-        let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "new");
+        let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "new", value = value);
         let __tracing_attr_guard = __tracing_attr_span.enter();
         {
             Self { inner: value }
@@ -21,7 +21,8 @@ where
         }
     }
     pub fn set(&mut self, new_value: T) {
-        let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "set");
+        let __tracing_attr_span =
+            tracing::span!(tracing::Level::INFO, "set", new_value = new_value);
         let __tracing_attr_guard = __tracing_attr_span.enter();
         {
             self.inner = new_value;
