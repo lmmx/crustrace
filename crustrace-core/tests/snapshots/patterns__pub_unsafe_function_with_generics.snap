@@ -3,7 +3,7 @@ source: crustrace-core/tests/patterns.rs
 expression: apply_trace_all(input)
 ---
 pub unsafe fn hello<T: Clone + Send>(value: T) -> T {
-    let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "hello");
+    let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "hello", value = value);
     let __tracing_attr_guard = __tracing_attr_span.enter();
     {
         value.clone()

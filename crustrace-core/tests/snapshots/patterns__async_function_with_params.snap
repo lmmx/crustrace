@@ -3,7 +3,8 @@ source: crustrace-core/tests/patterns.rs
 expression: apply_trace_all(input)
 ---
 async fn hello(name: &str, count: usize) -> Result<String, Error> {
-    let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "hello");
+    let __tracing_attr_span =
+        tracing::span!(tracing::Level::INFO, "hello", name = name, count = count);
     let __tracing_attr_guard = __tracing_attr_span.enter();
     {
         Ok(format!("Hello {} ({})", name, count))

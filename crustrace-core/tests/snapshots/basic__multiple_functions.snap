@@ -3,14 +3,14 @@ source: crustrace-core/tests/basic.rs
 expression: apply_trace_all(input)
 ---
 fn foo(x: i32) -> i32 {
-    let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "foo");
+    let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "foo", x = x);
     let __tracing_attr_guard = __tracing_attr_span.enter();
     {
         bar(x + 1)
     }
 }
 fn bar(y: i32) -> i32 {
-    let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "bar");
+    let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "bar", y = y);
     let __tracing_attr_guard = __tracing_attr_span.enter();
     {
         y * 2

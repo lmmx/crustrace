@@ -11,21 +11,22 @@ impl Calculator {
         }
     }
     pub fn add(&self, a: i32, b: i32) -> i32 {
-        let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "add");
+        let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "add", a = a, b = b);
         let __tracing_attr_guard = __tracing_attr_span.enter();
         {
             a + b
         }
     }
     pub fn multiply(&self, x: i32, y: i32) -> i32 {
-        let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "multiply");
+        let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "multiply", x = x, y = y);
         let __tracing_attr_guard = __tracing_attr_span.enter();
         {
             x * y
         }
     }
     fn internal_helper(&self, value: i32) -> i32 {
-        let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "internal_helper");
+        let __tracing_attr_span =
+            tracing::span!(tracing::Level::INFO, "internal_helper", value = value);
         let __tracing_attr_guard = __tracing_attr_span.enter();
         {
             value * 2

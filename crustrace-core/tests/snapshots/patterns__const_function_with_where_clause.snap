@@ -6,7 +6,7 @@ const fn hello<T>(value: T) -> T
 where
     T: Copy + Default,
 {
-    let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "hello");
+    let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "hello", value = value);
     let __tracing_attr_guard = __tracing_attr_span.enter();
     {
         value

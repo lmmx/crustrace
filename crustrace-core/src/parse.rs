@@ -38,11 +38,15 @@ keyword! {
     pub KSuper = "super";
     /// The "self" keyword
     pub KSelf = "self";
+    /// The "mut" keyword
+    pub KMut = "mut";
 }
 
 operator! {
     /// The "=" operator
     pub Eq = "=";
+    /// The "&" operator
+    pub And = "&";
 }
 
 unsynn! {
@@ -101,7 +105,7 @@ unsynn! {
         /// Optional generic parameters
         pub generics: Option<Generics>,
         /// Parameters in parentheses
-        pub params: ParenthesisGroup,
+        pub params: ParenthesisGroupContaining<Option<CommaDelimitedVec<FnParam>>>,
         /// Optional return type
         pub return_type: Option<ReturnType>,
         /// Optional where clause
@@ -273,6 +277,102 @@ unsynn! {
         /// All items in the module
         pub items: Many<ModuleItem>,
     }
+
+    /// Function parameter: name: Type or self variants
+    pub enum FnParam {
+        /// self parameter
+        SelfParam(SelfParam),
+        /// Regular parameter: name: Type
+        Named(NamedParam),
+        /// Pattern parameter: (a, b): (i32, i32)
+        Pattern(PatternParam),
+    }
+
+    /// self, &self, &mut self, mut self
+    pub enum SelfParam {
+        /// self
+        Value(KSelf),
+        /// &self
+        Ref(Cons<And, KSelf>),
+        /// &mut self
+        RefMut(Cons<And, Cons<KMut, KSelf>>),
+        /// mut self
+        Mut(Cons<KMut, KSelf>),
+    }
+
+    /// name: Type parameter
+    pub struct NamedParam {
+        /// Optional mut keyword
+        pub mut_kw: Option<KMut>,
+        /// Parameter name
+        pub name: Ident,
+        /// Colon
+        pub _colon: Colon,
+        /// Parameter type (opaque for now)
+        pub param_type: VerbatimUntil<Comma>,
+    }
+
+    /// Pattern parameter like (a, b): (i32, i32) or mut (x, y): Point
+    pub struct PatternParam {
+        /// Optional mut keyword
+        pub mut_kw: Option<KMut>,
+        /// Pattern (everything before colon, could be tuple, struct pattern, etc.)
+        pub pattern: Pattern,
+        /// Colon
+        pub _colon: Colon,
+        /// Parameter type
+        pub param_type: VerbatimUntil<Either<Comma, ParenthesisGroup>>,
+    }
+
+   /// Different types of patterns
+    pub enum Pattern {
+        /// Simple identifier: value
+        Ident(Ident),
+        /// Tuple pattern: (a, b, c)
+        Tuple(TuplePattern),
+        /// Other patterns (fallback)
+        Other(VerbatimUntil<Colon>),
+    }
+
+    /// Tuple destructuring pattern: (a, b, c)
+    pub struct TuplePattern {
+        /// Parentheses containing comma-separated identifiers
+        pub fields: ParenthesisGroupContaining<Option<CommaDelimitedVec<PatternField>>>,
+    }
+
+    /// Field in a pattern
+    pub enum PatternField {
+        /// Simple identifier
+        Ident(Ident),
+        /// Nested pattern (recursive)
+        Nested(Pattern),
+    }
+}
+
+impl Pattern {
+    pub(crate) fn extract_identifiers(&self) -> Vec<&Ident> {
+        match self {
+            Pattern::Tuple(tuple) => {
+                if let Some(fields) = &tuple.fields.content {
+                    fields
+                        .0
+                        .iter()
+                        .filter_map(|field| {
+                            if let PatternField::Ident(ident) = &field.value {
+                                Some(ident)
+                            } else {
+                                None
+                            }
+                        })
+                        .collect()
+                } else {
+                    Vec::new()
+                }
+            }
+            Pattern::Ident(ident) => vec![ident],
+            _ => Vec::new(),
+        }
+    }
 }
 
 // Implement ToTokens for quote! compatibility
@@ -329,6 +429,74 @@ impl quote::ToTokens for FnSig {
         }
 
         unsynn::ToTokens::to_tokens(&self.body, tokens);
+    }
+}
+
+impl quote::ToTokens for FnParam {
+    fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
+        match self {
+            FnParam::SelfParam(self_param) => quote::ToTokens::to_tokens(self_param, tokens),
+            FnParam::Named(named) => quote::ToTokens::to_tokens(named, tokens),
+            FnParam::Pattern(pattern) => quote::ToTokens::to_tokens(pattern, tokens),
+        }
+    }
+}
+
+impl quote::ToTokens for SelfParam {
+    fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
+        match self {
+            SelfParam::Value(self_kw) => unsynn::ToTokens::to_tokens(self_kw, tokens),
+            SelfParam::Ref(ref_self) => unsynn::ToTokens::to_tokens(ref_self, tokens),
+            SelfParam::RefMut(ref_mut_self) => unsynn::ToTokens::to_tokens(ref_mut_self, tokens),
+            SelfParam::Mut(mut_self) => unsynn::ToTokens::to_tokens(mut_self, tokens),
+        }
+    }
+}
+
+impl quote::ToTokens for NamedParam {
+    fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
+        if let Some(mut_kw) = &self.mut_kw {
+            unsynn::ToTokens::to_tokens(mut_kw, tokens);
+        }
+        quote::ToTokens::to_tokens(&self.name, tokens);
+        unsynn::ToTokens::to_tokens(&self._colon, tokens);
+        unsynn::ToTokens::to_tokens(&self.param_type, tokens);
+    }
+}
+
+impl quote::ToTokens for PatternParam {
+    fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
+        if let Some(mut_kw) = &self.mut_kw {
+            unsynn::ToTokens::to_tokens(mut_kw, tokens);
+        }
+        unsynn::ToTokens::to_tokens(&self.pattern, tokens);
+        unsynn::ToTokens::to_tokens(&self._colon, tokens);
+        unsynn::ToTokens::to_tokens(&self.param_type, tokens);
+    }
+}
+
+impl quote::ToTokens for Pattern {
+    fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
+        match self {
+            Pattern::Tuple(tuple) => quote::ToTokens::to_tokens(tuple, tokens),
+            Pattern::Ident(ident) => quote::ToTokens::to_tokens(ident, tokens),
+            Pattern::Other(other) => unsynn::ToTokens::to_tokens(other, tokens),
+        }
+    }
+}
+
+impl quote::ToTokens for TuplePattern {
+    fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
+        unsynn::ToTokens::to_tokens(&self.fields, tokens);
+    }
+}
+
+impl quote::ToTokens for PatternField {
+    fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
+        match self {
+            PatternField::Ident(ident) => quote::ToTokens::to_tokens(ident, tokens),
+            PatternField::Nested(pattern) => quote::ToTokens::to_tokens(pattern, tokens),
+        }
     }
 }
 
