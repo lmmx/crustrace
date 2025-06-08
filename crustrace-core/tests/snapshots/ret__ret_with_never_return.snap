@@ -1,0 +1,13 @@
+---
+source: crustrace-core/tests/ret.rs
+expression: "apply_instrument(args, item)"
+---
+fn never_returns() -> ! {
+    let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "never_returns");
+    let __tracing_attr_guard = __tracing_attr_span.enter();
+    let __tracing_attr_ret = (|| {
+        panic!("never returns");
+    })();
+    tracing :: event ! (tracing :: Level :: INFO , return_value = ? __tracing_attr_ret);
+    __tracing_attr_ret
+}

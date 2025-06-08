@@ -1,0 +1,11 @@
+---
+source: crustrace-core/tests/ret.rs
+expression: "apply_instrument(args, item)"
+---
+fn test_function() -> String {
+    let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "test_function");
+    let __tracing_attr_guard = __tracing_attr_span.enter();
+    let __tracing_attr_ret = (|| "hello".to_string())();
+    tracing :: event ! (tracing :: Level :: INFO , return_value = ? __tracing_attr_ret);
+    __tracing_attr_ret
+}
