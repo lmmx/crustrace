@@ -23,4 +23,8 @@ fn main() {
     println!("\n3. Custom span name:");
     let sum = add_numbers(10, 20);
     println!("add_numbers(10, 20) = {}", sum);
+
+    println!("\n4. Return value:");
+    let greeting = hello("world");
+    println!(r#"hello("world") = {}"#, greeting);
 }

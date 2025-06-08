@@ -40,6 +40,8 @@ keyword! {
     pub KSelf = "self";
     /// The "mut" keyword
     pub KMut = "mut";
+    /// The "ret" keyword (in the tracing macro)
+    pub KRet = "ret";
 }
 
 operator! {
@@ -68,6 +70,8 @@ unsynn! {
         Level(LevelArg),
         /// name = "custom"
         Name(NameArg),
+        /// ret
+        Ret(KRet),
     }
 
     /// Level argument: level = "debug"
@@ -847,5 +851,75 @@ mod tests {
         assert!(output.to_string().contains("unsafe"));
         assert!(output.to_string().contains("extern"));
         assert!(output.to_string().contains("\"C\""));
+    }
+
+    #[test]
+    fn test_ret_argument_parsing() {
+        let input = quote!(ret);
+        let mut iter = input.into_token_iter();
+
+        match iter.parse::<InstrumentInner>() {
+            Ok(parsed) => {
+                println!("✅ Parsed ret argument successfully!");
+
+                if let Some(args) = &parsed.args {
+                    println!("Number of arguments: {}", args.0.len());
+
+                    if let Some(first_arg) = args.0.first() {
+                        match &first_arg.value {
+                            InstrumentArg::Ret(_) => {
+                                println!("✅ Found Ret argument");
+                            }
+                            _ => {
+                                println!("❌ Expected Ret argument, found something else");
+                                panic!("Expected Ret argument");
+                            }
+                        }
+                    }
+                } else {
+                    println!("❌ No arguments found");
+                    panic!("No arguments parsed");
+                }
+            }
+            Err(e) => {
+                println!("❌ Parse failed: {}", e);
+                panic!("Parse failed: {}", e);
+            }
+        }
+    }
+
+    #[test]
+    fn test_ret_with_level_parsing() {
+        let input = quote!(level = "debug", ret);
+        let mut iter = input.into_token_iter();
+
+        match iter.parse::<InstrumentInner>() {
+            Ok(parsed) => {
+                println!("✅ Parsed mixed arguments successfully!");
+
+                if let Some(args) = &parsed.args {
+                    println!("Number of arguments: {}", args.0.len());
+                    assert_eq!(args.0.len(), 2, "Should have 2 arguments");
+
+                    let mut found_level = false;
+                    let mut found_ret = false;
+
+                    for arg in &args.0 {
+                        match &arg.value {
+                            InstrumentArg::Level(_) => found_level = true,
+                            InstrumentArg::Ret(_) => found_ret = true,
+                            _ => {}
+                        }
+                    }
+
+                    assert!(found_level, "Should find Level argument");
+                    assert!(found_ret, "Should find Ret argument");
+                }
+            }
+            Err(e) => {
+                println!("❌ Parse failed: {}", e);
+                panic!("Parse failed: {}", e);
+            }
+        }
     }
 }
