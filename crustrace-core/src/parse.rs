@@ -919,32 +919,32 @@ mod tests {
     }
 
     #[test]
-    fn test_ret_argument_parsing() {
-        let input = quote!(ret);
+    fn test_ret_with_level_parsing() {
+        let input = quote!(level = "debug", ret);
         let mut iter = input.into_token_iter();
 
         match iter.parse::<InstrumentInner>() {
             Ok(parsed) => {
-                println!("✅ Parsed ret argument successfully!");
+                println!("✅ Parsed mixed arguments successfully!");
 
-                if let Some(args) = &parsed.args {
-                    println!("Number of arguments: {}", args.0.len());
+                assert!(parsed.args.is_some(), "Should have parsed arguments");
+                let args = parsed.args.as_ref().unwrap();
+                println!("Number of arguments: {}", args.0.len());
+                assert_eq!(args.0.len(), 2, "Should have 2 arguments");
 
-                    if let Some(first_arg) = args.0.first() {
-                        match &first_arg.value {
-                            InstrumentArg::Ret(_) => {
-                                println!("✅ Found Ret argument");
-                            }
-                            _ => {
-                                println!("❌ Expected Ret argument, found something else");
-                                panic!("Expected Ret argument");
-                            }
-                        }
+                let mut found_level = false;
+                let mut found_ret = false;
+
+                for arg in &args.0 {
+                    match &arg.value {
+                        InstrumentArg::Level(_) => found_level = true,
+                        InstrumentArg::Ret(_) => found_ret = true,
+                        _ => {}
                     }
-                } else {
-                    println!("❌ No arguments found");
-                    panic!("No arguments parsed");
                 }
+
+                assert!(found_level, "Should find Level argument");
+                assert!(found_ret, "Should find Ret argument");
             }
             Err(e) => {
                 println!("❌ Parse failed: {}", e);
@@ -954,37 +954,35 @@ mod tests {
     }
 
     #[test]
-    fn test_ret_with_level_parsing() {
-        let input = quote!(level = "debug", ret);
+    fn test_mixed_args_with_ret() {
+        let input = quote!(level = "info", name = "custom", ret);
         let mut iter = input.into_token_iter();
 
         match iter.parse::<InstrumentInner>() {
             Ok(parsed) => {
-                println!("✅ Parsed mixed arguments successfully!");
+                println!("✅ Parsed mixed arguments with ret successfully!");
 
-                if let Some(args) = &parsed.args {
-                    println!("Number of arguments: {}", args.0.len());
-                    assert_eq!(args.0.len(), 2, "Should have 2 arguments");
+                assert!(parsed.args.is_some(), "Should have parsed arguments");
+                let args = parsed.args.as_ref().unwrap();
+                assert_eq!(args.0.len(), 3, "Should have 3 arguments");
 
-                    let mut found_level = false;
-                    let mut found_ret = false;
+                let mut found_level = false;
+                let mut found_name = false;
+                let mut found_ret = false;
 
-                    for arg in &args.0 {
-                        match &arg.value {
-                            InstrumentArg::Level(_) => found_level = true,
-                            InstrumentArg::Ret(_) => found_ret = true,
-                            _ => {}
-                        }
+                for arg in &args.0 {
+                    match &arg.value {
+                        InstrumentArg::Level(_) => found_level = true,
+                        InstrumentArg::Name(_) => found_name = true,
+                        InstrumentArg::Ret(_) => found_ret = true,
                     }
-
-                    assert!(found_level, "Should find Level argument");
-                    assert!(found_ret, "Should find Ret argument");
                 }
+
+                assert!(found_level, "Should find Level argument");
+                assert!(found_name, "Should find Name argument");
+                assert!(found_ret, "Should find Ret argument");
             }
-            Err(e) => {
-                println!("❌ Parse failed: {}", e);
-                panic!("Parse failed: {}", e);
-            }
+            Err(e) => panic!("Parse failed: {}", e),
         }
     }
 
@@ -998,14 +996,14 @@ mod tests {
             Ok(parsed) => {
                 println!("✅ Parsed bare ret successfully!");
 
-                if let Some(args) = &parsed.args {
-                    if let Some(first_arg) = args.0.first() {
-                        match &first_arg.value {
-                            InstrumentArg::Ret(_) => {
-                                println!("✅ Found Ret argument");
-                            }
-                            _ => panic!("Expected Ret argument"),
+                assert!(parsed.args.is_some(), "Should have parsed arguments");
+                let args = parsed.args.as_ref().unwrap();
+                if let Some(first_arg) = args.0.first() {
+                    match &first_arg.value {
+                        InstrumentArg::Ret(_) => {
+                            println!("✅ Found Ret argument");
                         }
+                        _ => panic!("Expected Ret argument"),
                     }
                 }
             }
@@ -1083,40 +1081,6 @@ mod tests {
             Ok(_parsed) => {
                 println!("✅ Parsed ret(level = \"warn\", Display) successfully!");
                 // Should parse ret with both custom level and format mode
-            }
-            Err(e) => panic!("Parse failed: {}", e),
-        }
-    }
-
-    #[test]
-    #[ignore]
-    fn test_mixed_args_with_ret() {
-        let input = quote!(level = "info", name = "custom", ret);
-        let mut iter = input.into_token_iter();
-
-        match iter.parse::<InstrumentInner>() {
-            Ok(parsed) => {
-                println!("✅ Parsed mixed arguments with ret successfully!");
-
-                if let Some(args) = &parsed.args {
-                    assert_eq!(args.0.len(), 3, "Should have 3 arguments");
-
-                    let mut found_level = false;
-                    let mut found_name = false;
-                    let mut found_ret = false;
-
-                    for arg in &args.0 {
-                        match &arg.value {
-                            InstrumentArg::Level(_) => found_level = true,
-                            InstrumentArg::Name(_) => found_name = true,
-                            InstrumentArg::Ret(_) => found_ret = true,
-                        }
-                    }
-
-                    assert!(found_level, "Should find Level argument");
-                    assert!(found_name, "Should find Name argument");
-                    assert!(found_ret, "Should find Ret argument");
-                }
             }
             Err(e) => panic!("Parse failed: {}", e),
         }
