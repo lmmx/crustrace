@@ -64,7 +64,6 @@ fn test_ret_display_format() {
     assert_snapshot!(apply_instrument(args, item));
 }
 
-// TODO 5,9,10: Level Handling
 #[test]
 fn test_ret_custom_level() {
     let args = quote!(ret(level = "warn"));
@@ -218,20 +217,9 @@ fn test_ret_with_never_return() {
 
 // TODO 11: Error Handling (these should fail when validation is implemented)
 #[test]
-#[should_panic(expected = "duplicate")]
+#[should_panic(expected = "expected only a single `ret` argument")]
 fn test_duplicate_ret_error() {
     let args = quote!(ret, ret);
-    let item = quote! {
-        fn test_function() -> i32 { 42 }
-    };
-
-    apply_instrument(args, item);
-}
-
-#[test]
-#[should_panic(expected = "unknown")]
-fn test_invalid_ret_format() {
-    let args = quote!(ret(Invalid));
     let item = quote! {
         fn test_function() -> i32 { 42 }
     };

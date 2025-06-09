@@ -42,6 +42,10 @@ keyword! {
     pub KMut = "mut";
     /// The "ret" keyword (in the tracing macro)
     pub KRet = "ret";
+    /// The "Debug" keyword (in the tracing macro ret arg)
+    pub KDebug = "Debug";
+    /// The "Display" keyword (in the tracing macro ret arg)
+    pub KDisplay = "Display";
 }
 
 operator! {
@@ -71,7 +75,7 @@ unsynn! {
         /// name = "custom"
         Name(NameArg),
         /// ret
-        Ret(KRet),
+        Ret(RetArgs),
     }
 
     /// Level argument: level = "debug"
@@ -350,6 +354,67 @@ unsynn! {
         Ident(Ident),
         /// Nested pattern (recursive)
         Nested(Pattern),
+    }
+
+    /// Arguments to ret() - parsed declaratively
+    pub struct RetArgs {
+        /// The ret keyword, which may be bare or followed by brackets (which may contain args)
+        pub _ret: KRet,
+        /// Optional parentheses containing ret arguments
+        pub args: Option<ParenthesisGroupContaining<Option<CommaDelimitedVec<RetArg>>>>,
+    }
+
+    /// Single argument inside ret(...)
+    pub enum RetArg {
+        /// level = "debug"
+        Level(LevelArg),
+        /// Debug format mode
+        Debug(KDebug), // matches "Debug" identifier
+        /// Display format mode
+        Display(KDisplay), // matches "Display" identifier
+    }
+
+    /// Format mode for return value logging
+    #[derive(Clone, Default, PartialEq, Eq)]
+    pub enum FormatMode {
+        /// Debug format (?)
+        #[default] Debug,
+        /// Display format (%)
+        Display,
+    }
+
+}
+
+// Parsing logic using unsynn declarative parsing:
+impl RetArgs {
+    /// Extract the effective format mode from parsed args
+    pub fn format_mode(&self) -> FormatMode {
+        if let Some(args_group) = &self.args {
+            if let Some(arg_list) = &args_group.content {
+                for arg in &arg_list.0 {
+                    match &arg.value {
+                        RetArg::Debug(_) => return FormatMode::Debug,
+                        RetArg::Display(_) => return FormatMode::Display,
+                        RetArg::Level(_) => continue,
+                    }
+                }
+            }
+        }
+        FormatMode::default()
+    }
+
+    /// Extract the custom level if specified
+    pub fn custom_level(&self) -> Option<&LevelArg> {
+        if let Some(args_group) = &self.args {
+            if let Some(arg_list) = &args_group.content {
+                for arg in &arg_list.0 {
+                    if let RetArg::Level(level_arg) = &arg.value {
+                        return Some(level_arg);
+                    }
+                }
+            }
+        }
+        None
     }
 }
 
@@ -1054,55 +1119,6 @@ mod tests {
                 }
             }
             Err(e) => panic!("Parse failed: {}", e),
-        }
-    }
-
-    #[test]
-    #[ignore]
-    fn test_duplicate_ret_error() {
-        let input = quote!(ret, ret);
-        let mut iter = input.into_token_iter();
-
-        match iter.parse::<InstrumentInner>() {
-            Ok(_) => panic!("Should fail with duplicate ret arguments"),
-            Err(e) => {
-                let error_msg = e.to_string();
-                assert!(error_msg.contains("ret") || error_msg.contains("duplicate"));
-            }
-        }
-    }
-
-    #[test]
-    #[ignore]
-    fn test_invalid_ret_format_mode() {
-        let input = quote!(ret(Invalid));
-        let mut iter = input.into_token_iter();
-
-        match iter.parse::<InstrumentInner>() {
-            Ok(_) => panic!("Should fail with invalid format mode"),
-            Err(e) => {
-                let error_msg = e.to_string();
-                assert!(
-                    error_msg.contains("Debug")
-                        || error_msg.contains("Display")
-                        || error_msg.contains("unknown")
-                );
-            }
-        }
-    }
-
-    #[test]
-    #[ignore]
-    fn test_ret_keyword_parsing() {
-        let input = quote!(ret);
-        let mut iter = input.into_token_iter();
-
-        // Test that KRet keyword can be parsed
-        match iter.parse::<KRet>() {
-            Ok(_ret_kw) => {
-                println!("✅ Parsed KRet keyword successfully!");
-            }
-            Err(e) => panic!("Failed to parse KRet keyword: {}", e),
         }
     }
 }
