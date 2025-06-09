@@ -987,7 +987,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn test_bare_ret_parsing() {
         let input = quote!(ret);
         let mut iter = input.into_token_iter();
@@ -1012,7 +1011,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn test_ret_with_parentheses_parsing() {
         let input = quote!(ret());
         let mut iter = input.into_token_iter();
@@ -1027,7 +1025,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn test_ret_with_debug_format() {
         let input = quote!(ret(Debug));
         let mut iter = input.into_token_iter();
@@ -1042,7 +1039,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn test_ret_with_display_format() {
         let input = quote!(ret(Display));
         let mut iter = input.into_token_iter();
@@ -1057,7 +1053,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn test_ret_with_custom_level() {
         let input = quote!(ret(level = "debug"));
         let mut iter = input.into_token_iter();
@@ -1072,7 +1067,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn test_ret_with_level_and_format() {
         let input = quote!(ret(level = "warn", Display));
         let mut iter = input.into_token_iter();
