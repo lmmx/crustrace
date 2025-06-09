@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4](https://github.com/lmmx/crustrace/compare/crustrace-core-v0.1.3...crustrace-core-v0.1.4) - 2025-06-09
+
+### <!-- 1 -->Features
+
+- *(ret)* handle `Debug` and `Display` args to `ret` ([#12](https://github.com/lmmx/crustrace/pull/12))
+
+### <!-- 6 -->Testing
+
+- unignore
+- tidy tests ([#13](https://github.com/lmmx/crustrace/pull/13))
+
 ## [0.1.3](https://github.com/lmmx/crustrace/compare/crustrace-core-v0.1.2...crustrace-core-v0.1.3) - 2025-06-08
 
 ### <!-- 1 -->Features
