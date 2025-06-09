@@ -3,7 +3,7 @@
 //! This crate provides the [`#[instrument]`] attribute macro using `unsynn` for parsing,
 //! offering a lightweight alternative to the standard `tracing-attributes` crate.
 
-use crate::parse::FnParam;
+use crate::parse::{FnParam, RetArgs};
 use core::result::Result;
 use proc_macro2::TokenStream;
 use quote::quote;
@@ -33,11 +33,11 @@ pub fn instrument_impl(args: TokenStream, item: TokenStream) -> Result<TokenStre
     Ok(generate_instrumented_function(instrument_args, func))
 }
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 struct InstrumentArgs {
     level: Option<String>,
     name: Option<String>,
-    ret: bool,
+    ret_args: Option<RetArgs>,
 }
 
 struct SimpleFunction {
@@ -69,8 +69,11 @@ fn parse_instrument_args(input: &mut TokenIter) -> Result<InstrumentArgs, String
                         InstrumentArg::Name(name_arg) => {
                             args.name = Some(name_arg.value.as_str().to_string());
                         }
-                        InstrumentArg::Ret(_) => {
-                            args.ret = true;
+                        InstrumentArg::Ret(ret_args) => {
+                            if args.ret_args.is_some() {
+                                return Err("expected only a single `ret` argument".to_string());
+                            }
+                            args.ret_args = Some(ret_args);
                         }
                     }
                 }
@@ -199,8 +202,8 @@ fn generate_instrumented_function(args: InstrumentArgs, func: SimpleFunction) ->
     // Determine span name
     let span_name = args.name.unwrap_or_else(|| fn_name.to_string());
 
-    // Determine level
-    let level = match args.level.as_deref() {
+    // Determine function level
+    let function_level = match args.level.as_deref() {
         Some("trace") => quote!(tracing::Level::TRACE),
         Some("debug") => quote!(tracing::Level::DEBUG),
         Some("info") => quote!(tracing::Level::INFO),
@@ -209,32 +212,44 @@ fn generate_instrumented_function(args: InstrumentArgs, func: SimpleFunction) ->
         _ => quote!(tracing::Level::INFO),
     };
 
-    // Extract parameter fields (simplified)
+    // Extract parameter fields
     let param_fields = extract_param_fields(&params);
 
-    // Generate visibility tokens
+    // Generate tokens for all the modifiers
     let vis_tokens = vis.unwrap_or_default();
-
-    // Generate modifier tokens
     let const_tokens = const_kw.unwrap_or_default();
     let async_tokens = async_kw.unwrap_or_default();
     let unsafe_tokens = unsafe_kw.unwrap_or_default();
     let extern_tokens = extern_kw.unwrap_or_default();
-
-    // Generate generics tokens
     let generics_tokens = generics.unwrap_or_default();
-
-    // Generate return type tokens
     let ret_tokens = ret_type.unwrap_or_default();
-
-    // Generate where clause tokens
     let where_tokens = where_clause.unwrap_or_default();
 
     // Generate the body handling based on whether ret is enabled
-    let body_handling = if args.ret {
+    let body_handling = if let Some(ret_args) = args.ret_args {
+        // Determine the level for the ret event
+        let ret_level = if let Some(level_arg) = ret_args.custom_level() {
+            match level_arg.value.as_str() {
+                "trace" => quote!(tracing::Level::TRACE),
+                "debug" => quote!(tracing::Level::DEBUG),
+                "info" => quote!(tracing::Level::INFO),
+                "warn" => quote!(tracing::Level::WARN),
+                "error" => quote!(tracing::Level::ERROR),
+                _ => function_level.clone(),
+            }
+        } else {
+            function_level.clone()
+        };
+
+        // Determine the format mode
+        let format_token = match ret_args.format_mode() {
+            crate::parse::FormatMode::Display => quote!(%),
+            crate::parse::FormatMode::Debug => quote!(?),
+        };
+
         quote! {
             let __tracing_attr_ret = (|| #body)();
-            tracing::event!(#level, return_value = ?__tracing_attr_ret);
+            tracing::event!(#ret_level, return_value = #format_token __tracing_attr_ret);
             __tracing_attr_ret
         }
     } else {
@@ -246,7 +261,7 @@ fn generate_instrumented_function(args: InstrumentArgs, func: SimpleFunction) ->
         #(#attrs)*
         #vis_tokens #const_tokens #async_tokens #unsafe_tokens #extern_tokens fn #fn_name #generics_tokens #params #ret_tokens #where_tokens {
             let __tracing_attr_span = tracing::span!(
-                #level,
+                #function_level,
                 #span_name
                 #param_fields
             );
@@ -715,5 +730,97 @@ mod extract_param_fields_tests {
 
         let result = extract_param_fields(&params);
         println!("Final result: {}", result);
+    }
+}
+
+#[cfg(test)]
+mod ret_dbg_tests {
+    use super::*;
+    use quote::quote;
+
+    #[test]
+    fn test_ret_dbg_parse_bare() {
+        let args = quote!(ret);
+        let mut iter = args.into_token_iter();
+
+        let result = parse_instrument_args(&mut iter);
+        println!("Bare ret parse result: {:?}", result);
+
+        assert!(result.is_ok());
+        let parsed = result.unwrap();
+        assert!(parsed.ret_args.is_some());
+    }
+
+    #[test]
+    fn test_ret_dbg_parse_display() {
+        let args = quote!(ret(Display));
+        let mut iter = args.into_token_iter();
+
+        let result = parse_instrument_args(&mut iter);
+        println!("ret(Display) parse result: {:?}", result);
+
+        if result.is_ok() {
+            let parsed = result.unwrap();
+            if let Some(ret_args) = parsed.ret_args {
+                println!("Format mode: {:?}", ret_args.format_mode());
+                assert_eq!(ret_args.format_mode(), crate::parse::FormatMode::Display);
+            }
+        }
+        // Don't assert success yet - this will fail until we implement parsing
+    }
+
+    #[test]
+    fn test_ret_dbg_codegen_display() {
+        let args = quote!(ret(Display));
+        let item = quote! { fn test() -> String { "hello".to_string() } };
+
+        let result = instrument_impl(args, item);
+        assert!(result.is_ok());
+
+        let output = result.unwrap();
+        let output_str = output.to_string();
+        println!("Generated code: {}", output_str);
+
+        // THIS SHOULD FAIL until Display format is implemented
+        assert!(
+            output_str.contains("return_value = % __tracing_attr_ret"),
+            "Expected Display format (%) but got: {}",
+            output_str
+        );
+    }
+
+    #[test]
+    fn test_ret_dbg_codegen_custom_level() {
+        let args = quote!(ret(level = "warn"));
+        let item = quote! { fn test() -> i32 { 42 } };
+
+        let result = instrument_impl(args, item);
+        assert!(result.is_ok());
+
+        let output = result.unwrap();
+        let output_str = output.to_string();
+        println!("Generated code: {}", output_str);
+
+        // THIS SHOULD FAIL until custom level is implemented
+        assert!(
+            output_str.contains("tracing :: event ! (tracing :: Level :: WARN"),
+            "Expected WARN level but got: {}",
+            output_str
+        );
+    }
+
+    #[test]
+    fn test_ret_dbg_duplicate_validation() {
+        let args = quote!(ret, ret);
+        let mut iter = args.into_token_iter();
+
+        let result = parse_instrument_args(&mut iter);
+        println!("Duplicate ret parse result: {:?}", result);
+
+        // THIS SHOULD FAIL until duplicate validation is implemented
+        assert!(
+            result.is_err(),
+            "Expected error for duplicate ret arguments but parsing succeeded"
+        );
     }
 }

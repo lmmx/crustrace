@@ -1,0 +1,12 @@
+---
+source: crustrace-core/tests/ret.rs
+expression: "apply_instrument(args, item)"
+---
+fn complex_function(input: &str) -> Result<String, Box<dyn std::error::Error>> {
+    let __tracing_attr_span =
+        tracing::span!(tracing::Level::INFO, "complex_function", input = input);
+    let __tracing_attr_guard = __tracing_attr_span.enter();
+    let __tracing_attr_ret = (|| Ok(input.to_uppercase()))();
+    tracing :: event ! (tracing :: Level :: WARN , return_value = % __tracing_attr_ret);
+    __tracing_attr_ret
+}

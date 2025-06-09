@@ -1,0 +1,11 @@
+---
+source: crustrace-core/tests/ret.rs
+expression: "apply_instrument(args, item)"
+---
+fn large_return() -> Vec<Vec<Vec<i32>>> {
+    let __tracing_attr_span = tracing::span!(tracing::Level::INFO, "large_return");
+    let __tracing_attr_guard = __tracing_attr_span.enter();
+    let __tracing_attr_ret = (|| vec![vec![vec![1, 2, 3]; 100]; 100])();
+    tracing :: event ! (tracing :: Level :: INFO , return_value = ? __tracing_attr_ret);
+    __tracing_attr_ret
+}

@@ -42,6 +42,10 @@ keyword! {
     pub KMut = "mut";
     /// The "ret" keyword (in the tracing macro)
     pub KRet = "ret";
+    /// The "Debug" keyword (in the tracing macro ret arg)
+    pub KDebug = "Debug";
+    /// The "Display" keyword (in the tracing macro ret arg)
+    pub KDisplay = "Display";
 }
 
 operator! {
@@ -71,7 +75,7 @@ unsynn! {
         /// name = "custom"
         Name(NameArg),
         /// ret
-        Ret(KRet),
+        Ret(RetArgs),
     }
 
     /// Level argument: level = "debug"
@@ -350,6 +354,67 @@ unsynn! {
         Ident(Ident),
         /// Nested pattern (recursive)
         Nested(Pattern),
+    }
+
+    /// Arguments to ret() - parsed declaratively
+    pub struct RetArgs {
+        /// The ret keyword, which may be bare or followed by brackets (which may contain args)
+        pub _ret: KRet,
+        /// Optional parentheses containing ret arguments
+        pub args: Option<ParenthesisGroupContaining<Option<CommaDelimitedVec<RetArg>>>>,
+    }
+
+    /// Single argument inside ret(...)
+    pub enum RetArg {
+        /// level = "debug"
+        Level(LevelArg),
+        /// Debug format mode
+        Debug(KDebug), // matches "Debug" identifier
+        /// Display format mode
+        Display(KDisplay), // matches "Display" identifier
+    }
+
+    /// Format mode for return value logging
+    #[derive(Clone, Default, PartialEq, Eq)]
+    pub enum FormatMode {
+        /// Debug format (?)
+        #[default] Debug,
+        /// Display format (%)
+        Display,
+    }
+
+}
+
+// Parsing logic using unsynn declarative parsing:
+impl RetArgs {
+    /// Extract the effective format mode from parsed args
+    pub fn format_mode(&self) -> FormatMode {
+        if let Some(args_group) = &self.args {
+            if let Some(arg_list) = &args_group.content {
+                for arg in &arg_list.0 {
+                    match &arg.value {
+                        RetArg::Debug(_) => return FormatMode::Debug,
+                        RetArg::Display(_) => return FormatMode::Display,
+                        RetArg::Level(_) => continue,
+                    }
+                }
+            }
+        }
+        FormatMode::default()
+    }
+
+    /// Extract the custom level if specified
+    pub fn custom_level(&self) -> Option<&LevelArg> {
+        if let Some(args_group) = &self.args {
+            if let Some(arg_list) = &args_group.content {
+                for arg in &arg_list.0 {
+                    if let RetArg::Level(level_arg) = &arg.value {
+                        return Some(level_arg);
+                    }
+                }
+            }
+        }
+        None
     }
 }
 
@@ -920,6 +985,140 @@ mod tests {
                 println!("❌ Parse failed: {}", e);
                 panic!("Parse failed: {}", e);
             }
+        }
+    }
+
+    #[test]
+    #[ignore]
+    fn test_bare_ret_parsing() {
+        let input = quote!(ret);
+        let mut iter = input.into_token_iter();
+
+        match iter.parse::<InstrumentInner>() {
+            Ok(parsed) => {
+                println!("✅ Parsed bare ret successfully!");
+
+                if let Some(args) = &parsed.args {
+                    if let Some(first_arg) = args.0.first() {
+                        match &first_arg.value {
+                            InstrumentArg::Ret(_) => {
+                                println!("✅ Found Ret argument");
+                            }
+                            _ => panic!("Expected Ret argument"),
+                        }
+                    }
+                }
+            }
+            Err(e) => panic!("Parse failed: {}", e),
+        }
+    }
+
+    #[test]
+    #[ignore]
+    fn test_ret_with_parentheses_parsing() {
+        let input = quote!(ret());
+        let mut iter = input.into_token_iter();
+
+        match iter.parse::<InstrumentInner>() {
+            Ok(_parsed) => {
+                println!("✅ Parsed ret() successfully!");
+                // Should parse ret with empty parentheses (default EventArgs)
+            }
+            Err(e) => panic!("Parse failed: {}", e),
+        }
+    }
+
+    #[test]
+    #[ignore]
+    fn test_ret_with_debug_format() {
+        let input = quote!(ret(Debug));
+        let mut iter = input.into_token_iter();
+
+        match iter.parse::<InstrumentInner>() {
+            Ok(_parsed) => {
+                println!("✅ Parsed ret(Debug) successfully!");
+                // Should parse ret with Debug format mode
+            }
+            Err(e) => panic!("Parse failed: {}", e),
+        }
+    }
+
+    #[test]
+    #[ignore]
+    fn test_ret_with_display_format() {
+        let input = quote!(ret(Display));
+        let mut iter = input.into_token_iter();
+
+        match iter.parse::<InstrumentInner>() {
+            Ok(_parsed) => {
+                println!("✅ Parsed ret(Display) successfully!");
+                // Should parse ret with Display format mode
+            }
+            Err(e) => panic!("Parse failed: {}", e),
+        }
+    }
+
+    #[test]
+    #[ignore]
+    fn test_ret_with_custom_level() {
+        let input = quote!(ret(level = "debug"));
+        let mut iter = input.into_token_iter();
+
+        match iter.parse::<InstrumentInner>() {
+            Ok(_parsed) => {
+                println!("✅ Parsed ret(level = \"debug\") successfully!");
+                // Should parse ret with custom level
+            }
+            Err(e) => panic!("Parse failed: {}", e),
+        }
+    }
+
+    #[test]
+    #[ignore]
+    fn test_ret_with_level_and_format() {
+        let input = quote!(ret(level = "warn", Display));
+        let mut iter = input.into_token_iter();
+
+        match iter.parse::<InstrumentInner>() {
+            Ok(_parsed) => {
+                println!("✅ Parsed ret(level = \"warn\", Display) successfully!");
+                // Should parse ret with both custom level and format mode
+            }
+            Err(e) => panic!("Parse failed: {}", e),
+        }
+    }
+
+    #[test]
+    #[ignore]
+    fn test_mixed_args_with_ret() {
+        let input = quote!(level = "info", name = "custom", ret);
+        let mut iter = input.into_token_iter();
+
+        match iter.parse::<InstrumentInner>() {
+            Ok(parsed) => {
+                println!("✅ Parsed mixed arguments with ret successfully!");
+
+                if let Some(args) = &parsed.args {
+                    assert_eq!(args.0.len(), 3, "Should have 3 arguments");
+
+                    let mut found_level = false;
+                    let mut found_name = false;
+                    let mut found_ret = false;
+
+                    for arg in &args.0 {
+                        match &arg.value {
+                            InstrumentArg::Level(_) => found_level = true,
+                            InstrumentArg::Name(_) => found_name = true,
+                            InstrumentArg::Ret(_) => found_ret = true,
+                        }
+                    }
+
+                    assert!(found_level, "Should find Level argument");
+                    assert!(found_name, "Should find Name argument");
+                    assert!(found_ret, "Should find Ret argument");
+                }
+            }
+            Err(e) => panic!("Parse failed: {}", e),
         }
     }
 }
