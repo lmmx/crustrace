@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.5](https://github.com/lmmx/crustrace/compare/crustrace-core-v0.1.4...crustrace-core-v0.1.5) - 2025-06-10
+
+### <!-- 1 -->Features
+
+- set span `parent` via instrument `parent` ([#16](https://github.com/lmmx/crustrace/pull/16))
+- set span `target` via instrument `target` ([#15](https://github.com/lmmx/crustrace/pull/15))
+
+### <!-- 5 -->Refactor
+
+- split out unit tests as submodules
+
 ## [0.1.4](https://github.com/lmmx/crustrace/compare/crustrace-core-v0.1.3...crustrace-core-v0.1.4) - 2025-06-09
 
 ### <!-- 1 -->Features
