@@ -39,6 +39,7 @@ struct InstrumentArgs {
     name: Option<String>,
     ret_args: Option<RetArgs>,
     target: Option<String>,
+    parent: Option<TokenStream>,
 }
 
 struct SimpleFunction {
@@ -78,6 +79,11 @@ fn parse_instrument_args(input: &mut TokenIter) -> Result<InstrumentArgs, String
                         }
                         InstrumentArg::Target(target_arg) => {
                             args.target = Some(target_arg.value.as_str().to_string());
+                        }
+                        InstrumentArg::Parent(parent_arg) => {
+                            let mut parent_tokens = proc_macro2::TokenStream::new();
+                            unsynn::ToTokens::to_tokens(&parent_arg.value, &mut parent_tokens);
+                            args.parent = Some(parent_tokens);
                         }
                     }
                 }
@@ -260,9 +266,15 @@ fn generate_instrumented_function(args: InstrumentArgs, func: SimpleFunction) ->
         body
     };
 
-    // Add target handling - only include if explicitly provided
+    // Target handling - only include if explicitly provided
     let target_tokens = if let Some(target) = &args.target {
         quote!(target: #target,)
+    } else {
+        quote!()
+    };
+    // Likewise for parent, only if given
+    let parent_tokens = if let Some(parent) = &args.parent {
+        quote!(parent: #parent,)
     } else {
         quote!()
     };
@@ -273,6 +285,7 @@ fn generate_instrumented_function(args: InstrumentArgs, func: SimpleFunction) ->
         #vis_tokens #const_tokens #async_tokens #unsafe_tokens #extern_tokens fn #fn_name #generics_tokens #params #ret_tokens #where_tokens {
             let __tracing_attr_span = tracing::span!(
                 #target_tokens
+                #parent_tokens
                 #function_level,
                 #span_name
                 #param_fields

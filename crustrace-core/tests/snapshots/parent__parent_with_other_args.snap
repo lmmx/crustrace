@@ -1,0 +1,11 @@
+---
+source: crustrace-core/tests/parent.rs
+expression: "apply_instrument(args, item)"
+---
+fn complex_function(a: i32, b: String) -> Result<i32, String> {
+    let __tracing_attr_span = tracing :: span ! (target : "my::module" , parent : & context . span , tracing :: Level :: DEBUG , "custom_name" , a = a , b = b);
+    let __tracing_attr_guard = __tracing_attr_span.enter();
+    {
+        Ok(a + b.len() as i32)
+    }
+}
