@@ -1,0 +1,11 @@
+---
+source: crustrace-core/tests/parent.rs
+expression: "apply_instrument(args, item)"
+---
+fn test_function(x: u32) -> u32 {
+    let __tracing_attr_span = tracing :: span ! (parent : get_current_span () , tracing :: Level :: INFO , "test_function" , x = x);
+    let __tracing_attr_guard = __tracing_attr_span.enter();
+    {
+        x + 1
+    }
+}

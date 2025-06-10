@@ -48,6 +48,8 @@ keyword! {
     pub KDisplay = "Display";
     /// The "target" keyword (in the tracing macro target arg)
     pub KTarget = "target";
+    /// The "parent" keyword (in the tracing macro target arg)
+    pub KParent = "parent";
 }
 
 operator! {
@@ -76,8 +78,10 @@ unsynn! {
         Level(LevelArg),
         /// name = "custom"
         Name(NameArg),
-        /// target = "my_module"
+        /// target = "my_module::my_target"
         Target(TargetArg),
+        /// parent = "some_span"
+        Parent(ParentArg),
         /// ret
         Ret(RetArgs),
     }
@@ -96,11 +100,18 @@ unsynn! {
         pub value: LiteralString,
     }
 
-    /// Target argument: target = "my_module"
+    /// Target argument: target = "my_module::my_target"
     pub struct TargetArg {
         pub _target: KTarget,
         pub _eq: Eq,
         pub value: LiteralString,
+    }
+
+    /// Parent argument: parent = "some_span"
+    pub struct ParentArg {
+        pub _parent: KParent,
+        pub _eq: Eq,
+        pub value: VerbatimUntil<Comma>,  // Note: parent can be expressions, not just strings
     }
 
     /// Complete function signature

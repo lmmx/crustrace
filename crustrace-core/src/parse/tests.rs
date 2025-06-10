@@ -234,6 +234,7 @@ fn test_mixed_args_with_ret() {
         level = "info",
         name = "custom",
         target = "a_crate::a_target",
+        parent = "some_parent_span",
         ret
     );
     let mut iter = input.into_token_iter();
@@ -244,12 +245,13 @@ fn test_mixed_args_with_ret() {
 
             assert!(parsed.args.is_some(), "Should have parsed arguments");
             let args = parsed.args.as_ref().unwrap();
-            assert_eq!(args.0.len(), 4, "Should have 4 arguments");
+            assert_eq!(args.0.len(), 5, "Should have 5 arguments");
 
             let mut found_level = false;
             let mut found_name = false;
             let mut found_ret = false;
             let mut found_target = false;
+            let mut found_parent = false;
 
             for arg in &args.0 {
                 match &arg.value {
@@ -257,6 +259,7 @@ fn test_mixed_args_with_ret() {
                     InstrumentArg::Name(_) => found_name = true,
                     InstrumentArg::Ret(_) => found_ret = true,
                     InstrumentArg::Target(_) => found_target = true,
+                    InstrumentArg::Parent(_) => found_parent = true,
                 }
             }
 
@@ -264,6 +267,7 @@ fn test_mixed_args_with_ret() {
             assert!(found_name, "Should find Name argument");
             assert!(found_ret, "Should find Ret argument");
             assert!(found_target, "Should find Target argument");
+            assert!(found_parent, "Should find Parent argument");
         }
         Err(e) => panic!("Parse failed: {}", e),
     }
