@@ -46,6 +46,8 @@ keyword! {
     pub KDebug = "Debug";
     /// The "Display" keyword (in the tracing macro ret arg)
     pub KDisplay = "Display";
+    /// The "target" keyword (in the tracing macro target arg)
+    pub KTarget = "target";
 }
 
 operator! {
@@ -74,6 +76,8 @@ unsynn! {
         Level(LevelArg),
         /// name = "custom"
         Name(NameArg),
+        /// target = "my_module"
+        Target(TargetArg),
         /// ret
         Ret(RetArgs),
     }
@@ -88,6 +92,13 @@ unsynn! {
     /// Name argument: name = "custom"
     pub struct NameArg {
         pub _name: KName,
+        pub _eq: Eq,
+        pub value: LiteralString,
+    }
+
+    /// Target argument: target = "my_module"
+    pub struct TargetArg {
+        pub _target: KTarget,
         pub _eq: Eq,
         pub value: LiteralString,
     }

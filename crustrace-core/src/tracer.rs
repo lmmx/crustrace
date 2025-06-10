@@ -38,6 +38,7 @@ struct InstrumentArgs {
     level: Option<String>,
     name: Option<String>,
     ret_args: Option<RetArgs>,
+    target: Option<String>,
 }
 
 struct SimpleFunction {
@@ -74,6 +75,9 @@ fn parse_instrument_args(input: &mut TokenIter) -> Result<InstrumentArgs, String
                                 return Err("expected only a single `ret` argument".to_string());
                             }
                             args.ret_args = Some(ret_args);
+                        }
+                        InstrumentArg::Target(target_arg) => {
+                            args.target = Some(target_arg.value.as_str().to_string());
                         }
                     }
                 }
@@ -256,11 +260,19 @@ fn generate_instrumented_function(args: InstrumentArgs, func: SimpleFunction) ->
         body
     };
 
+    // Add target handling - only include if explicitly provided
+    let target_tokens = if let Some(target) = &args.target {
+        quote!(target: #target,)
+    } else {
+        quote!()
+    };
+
     // Generate the instrumented function
     quote! {
         #(#attrs)*
         #vis_tokens #const_tokens #async_tokens #unsafe_tokens #extern_tokens fn #fn_name #generics_tokens #params #ret_tokens #where_tokens {
             let __tracing_attr_span = tracing::span!(
+                #target_tokens
                 #function_level,
                 #span_name
                 #param_fields
