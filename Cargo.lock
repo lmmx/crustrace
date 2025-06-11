@@ -28,7 +28,7 @@ dependencies = [
 
 [[package]]
 name = "crustrace"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "cargo-husky",
  "crustrace-core",
@@ -41,7 +41,7 @@ dependencies = [
 
 [[package]]
 name = "crustrace-core"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "insta",
  "proc-macro2",
