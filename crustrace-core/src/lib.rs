@@ -1,4 +1,4 @@
-/// Crustrace
+/// Crustrace: tracing instrumentation helper macros
 mod parse;
 mod token_processors;
 
