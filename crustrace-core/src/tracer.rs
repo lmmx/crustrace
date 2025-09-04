@@ -320,6 +320,9 @@ fn extract_param_fields(params: &TokenStream) -> TokenStream {
         match &param.value {
             FnParam::Named(named_param) => {
                 let param_name = &named_param.name;
+                #[cfg(feature = "debug")]
+                fields.push(quote!(, #param_name = ?#param_name));
+                #[cfg(not(feature = "debug"))]
                 fields.push(quote!(, #param_name = #param_name));
             }
             FnParam::SelfParam(_) => {
@@ -328,6 +331,9 @@ fn extract_param_fields(params: &TokenStream) -> TokenStream {
             FnParam::Pattern(pattern_param) => {
                 let identifiers = pattern_param.pattern.extract_identifiers();
                 for ident in identifiers {
+                    #[cfg(feature = "debug")]
+                    fields.push(quote!(, #ident = ?#ident));
+                    #[cfg(not(feature = "debug"))]
                     fields.push(quote!(, #ident = #ident));
                 }
             }

@@ -11,11 +11,11 @@ fn escape_mermaid(input: &str) -> String {
         .replace('"', "&quot;")
         .replace('\'', "&#39;")
         .replace('{', "&#123;")
-        .replace('}', "&#125;")
         .replace('[', "&#91;")
-        .replace(']', "&#93;")
         .replace('|', "&#124;")
 }
+// .replace(']', "&#93;")
+// .replace('}', "&#125;")
 
 /// A [`Visit`] implementation that captures span fields as `(key, value)` pairs.
 ///
