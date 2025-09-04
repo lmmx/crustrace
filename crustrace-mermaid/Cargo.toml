@@ -1,0 +1,16 @@
+[package]
+description = "Tracing subscriber layer that renders crustrace spans as Mermaid flowcharts"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+name = "crustrace-mermaid"
+repository = "https://github.com/lmmx/crustrace"
+version = "0.1.0"
+
+[dependencies]
+tracing.workspace = true
+tracing-subscriber = { features = ["registry"], workspace = true }
+
+[dev-dependencies]
+crustrace.workspace = true
+insta.workspace = true
+tracing = { features = ["std"], workspace = true }

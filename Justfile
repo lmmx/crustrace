@@ -5,12 +5,13 @@
 # but they require bash.
 #
 # The non`-ci` variants can be run locally without having bash installed.
+import ".just/commit.just"
+import ".just/hooks.just"
 
 set dotenv-load
 
 default: precommit prepush
 
-precommit: code-quality absolve
 prepush: clippy test
 precommit-fix: code-quality-fix
 
