@@ -2,6 +2,7 @@
 members = [
   "crustrace",
   "crustrace-core",
+  "crustrace-mermaid",
   "examples/instrument_fib",
   "examples/omni_mod_fib",
   "examples/omni_struct_fib",
@@ -15,16 +16,16 @@ repository = "https://github.com/lmmx/crustace"
 rust-version = "1.82.0"
 
 [workspace.dependencies]
-cargo-husky = { version = "1.5.0", default-features = false }
-crustrace = { version = "0.1.7", path = "crustrace" }
-crustrace-core = { version = "0.1.7", path = "crustrace-core" }
+cargo-husky = { default-features = false, version = "1.5.0" }
+crustrace = { path = "crustrace", version = "0.1.7" }
+crustrace-core = { path = "crustrace-core", version = "0.1.7" }
 insta = "1.0"
 proc-macro2 = "1.0"
 quote = "1.0"
 rust-format = { features = ["proc-macro2", "token_stream"], version = "0.3.4" }
 tracing = { default-features = false, version = "0.1.41" }
-tracing-subscriber = { default-features = false, version = "0.3", features = [
+tracing-subscriber = { default-features = false, features = [
   "ansi", # coloured
   "fmt",  # printable
-] }
+], version = "0.3" }
 unsynn = { default-features = false, version = "0.1.1" }

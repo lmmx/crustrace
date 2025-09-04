@@ -22,8 +22,7 @@ fn test_ret_dbg_parse_display() {
     let result = parse_instrument_args(&mut iter);
     println!("ret(Display) parse result: {:?}", result);
 
-    if result.is_ok() {
-        let parsed = result.unwrap();
+    if let Ok(parsed) = result {
         if let Some(ret_args) = parsed.ret_args {
             println!("Format mode: {:?}", ret_args.format_mode());
             assert_eq!(ret_args.format_mode(), crate::parse::FormatMode::Display);
