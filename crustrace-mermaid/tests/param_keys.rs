@@ -1,5 +1,5 @@
 #[cfg(test)]
-mod tests {
+mod param_keys_tests {
     use crustrace::instrument;
     use crustrace_mermaid::*;
     use tracing::subscriber::set_default;
@@ -18,26 +18,26 @@ mod tests {
     }
 
     #[test]
-    fn snapshot_merge_by_name() {
+    fn snapshot_single_node() {
         let layer = MermaidLayer::new()
-            .with_mode(GroupingMode::MergeByName)
+            .with_params_mode(ParamRenderMode::SingleNode)
             .without_auto_flush();
         let subscriber = tracing_subscriber::registry().with(layer.clone());
+        let _guard = set_default(subscriber);
 
-        let _guard = set_default(subscriber); // scoped subscriber
         outer(10, 20);
 
         insta::assert_snapshot!(layer.render());
     }
 
     #[test]
-    fn snapshot_unique_per_call() {
+    fn snapshot_single_node_grouped() {
         let layer = MermaidLayer::new()
-            .with_mode(GroupingMode::UniquePerCall)
+            .with_params_mode(ParamRenderMode::SingleNodeGrouped)
             .without_auto_flush();
         let subscriber = tracing_subscriber::registry().with(layer.clone());
+        let _guard = set_default(subscriber);
 
-        let _guard = set_default(subscriber); // scoped subscriber
         outer(10, 20);
 
         insta::assert_snapshot!(layer.render());

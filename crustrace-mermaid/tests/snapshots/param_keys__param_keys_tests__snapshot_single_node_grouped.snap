@@ -1,0 +1,33 @@
+---
+source: crustrace-mermaid/tests/param_keys.rs
+expression: layer.render()
+---
+flowchart TD
+F1["outer()"]:::func
+PK1["outer(params):
+• a = 10
+• b = 20"]:::data
+F1 -.-> PK1
+F2["inner()"]:::func
+PK2["inner(params):
+• x = 11
+• y = 2"]:::data
+F2 -.-> PK2
+  F1 --> F2
+F3["inner()"]:::func
+PK3["inner(params):
+• x = 20
+• y = 1"]:::data
+F3 -.-> PK3
+  F1 --> F3
+subgraph ParamsKey["Parameters"]
+  direction TB
+  PK1
+  PK2
+  PK3
+end
+
+classDef func fill:#c6f6d5,stroke:#2f855a,stroke-width:2px,color:#22543d;
+classDef data fill:#bee3f8,stroke:#2b6cb0,stroke-width:1.5px,color:#1a365d;
+classDef params fill:none,stroke:#e53e3e,stroke-width:2px,color:#742a2a;
+class PK1,PK2,PK3 params;
