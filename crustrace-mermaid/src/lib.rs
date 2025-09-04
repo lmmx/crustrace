@@ -1,3 +1,40 @@
+//! # crustrace-mermaid
+//!
+//! A [`tracing_subscriber::Layer`] implementation that collects spans
+//! and renders them as [Mermaid flowcharts](https://mermaid.js.org/syntax/flowchart.html).
+//!
+//! This crate is designed to pair with [`crustrace`](https://crates.io/crates/crustrace),
+//! which automatically instruments entire modules. Together, you can
+//! generate call graphs of your Rust program without hand-writing `#[instrument]`.
+//!
+//! ## Example
+//!
+//! ```rust
+//! use crustrace::instrument;
+//! use crustrace_mermaid::{MermaidLayer, GroupingMode};
+//! use tracing_subscriber::prelude::*;
+//!
+//! #[instrument]
+//! fn inner(x: i32) -> i32 { x + 1 }
+//!
+//! #[instrument]
+//! fn outer(y: i32) -> i32 {
+//!     inner(y) + inner(y * 2)
+//! }
+//!
+//! fn main() {
+//!     let layer = MermaidLayer::with_mode(GroupingMode::MergeByName);
+//!     tracing_subscriber::registry().with(layer).init();
+//!
+//!     outer(5);
+//!     // When the root span closes, a Mermaid diagram is printed to stdout
+//! }
+//! ```
+//!
+//! By default, the layer flushes automatically when a root span finishes,
+//! but you can disable this with [`MermaidLayer::without_auto_flush`] and
+//! call [`MermaidLayer::flush`] manually.
+//!
 mod visitor;
 use visitor::FieldVisitor;
 
@@ -30,15 +67,23 @@ impl CallNode {
     }
 }
 
+/// How to group multiple calls in the rendered Mermaid output.
 #[derive(Clone, Copy, PartialEq)]
 pub enum GroupingMode {
-    /// Each call span gets a unique subgraph (no merging)
+    /// Each call span gets its own subgraph.
+    ///
+    /// This preserves call uniqueness at the cost of potentially repetitive diagrams.
     UniquePerCall,
-    /// Calls with the same function name share a subgraph
+    /// Calls with the same function name are grouped into a single subgraph.
+    ///
+    /// This produces a more compact view where repeated calls appear together.
     MergeByName,
 }
 
-/// A tracing Layer that collects spans and renders them as a Mermaid flowchart.
+/// A [`tracing_subscriber::Layer`] that collects function spans
+/// and renders them as a Mermaid flowchart.
+///
+/// This is the main entry point of the crate.
 #[derive(Clone)]
 pub struct MermaidLayer {
     roots: Arc<Mutex<Vec<Arc<Mutex<CallNode>>>>>,
@@ -47,6 +92,13 @@ pub struct MermaidLayer {
     auto_flush: bool,
 }
 
+/// Where to write rendered Mermaid diagrams.
+///
+/// - `Stdout`: print to stdout
+/// - `File`: write to a file handle (locked by `Arc<Mutex<...>>`)
+///
+/// This is set at layer construction time by [`MermaidLayer::new`] or
+/// [`MermaidLayer::new_to_file`].
 #[derive(Clone)]
 enum OutputTarget {
     Stdout,
@@ -59,8 +111,16 @@ impl Default for MermaidLayer {
     }
 }
 
+const MERMAID_STYLES: &str = r#"
+classDef func fill:#c6f6d5,stroke:#2f855a,stroke-width:2px,color:#22543d;
+classDef data fill:#bee3f8,stroke:#2b6cb0,stroke-width:1.5px,color:#1a365d;
+classDef params fill:none,stroke:#e53e3e,stroke-width:2px,color:#742a2a;
+"#;
+
 impl MermaidLayer {
-    /// Create a new Mermaid layer that writes to stdout when dropped.
+    /// Create a new layer that writes to stdout when dropped.
+    ///
+    /// By default, uses [`GroupingMode::MergeByName`] and enables auto-flush.
     pub fn new() -> Self {
         Self {
             roots: Arc::new(Mutex::new(Vec::new())),
@@ -70,6 +130,7 @@ impl MermaidLayer {
         }
     }
 
+    /// Like [`MermaidLayer::new`] but lets you choose the [`GroupingMode`].
     pub fn with_mode(mode: GroupingMode) -> Self {
         Self {
             roots: Arc::new(Mutex::new(Vec::new())),
@@ -79,13 +140,18 @@ impl MermaidLayer {
         }
     }
 
-    /// Disable auto flush (for manual control).
+    /// Disable automatic flushing on root span close.
+    ///
+    /// Useful if you want to render once at the very end of your program or test,
+    /// instead of printing multiple partial diagrams.
     pub fn without_auto_flush(mut self) -> Self {
         self.auto_flush = false;
         self
     }
 
-    /// Create a new Mermaid layer that writes to the given file when dropped.
+    /// Create a new layer that writes diagrams to a given file when dropped.
+    ///
+    /// The file is overwritten each time.
     pub fn new_to_file<P: AsRef<Path>>(path: P) -> io::Result<Self> {
         let file = File::create(path)?;
         Ok(Self {
@@ -96,7 +162,10 @@ impl MermaidLayer {
         })
     }
 
-    /// Render all collected spans as Mermaid flowchart text.
+    /// Render all collected spans into Mermaid flowchart text.
+    ///
+    /// This does not print anything; see [`MermaidLayer::flush`] if you want to
+    /// send the result to stdout or to the configured file.
     pub fn render(&self) -> String {
         let roots = self.roots.lock().unwrap();
         let mut out = String::from("flowchart TD\n");
@@ -109,14 +178,7 @@ impl MermaidLayer {
             self.render_node(&mut out, root, &mut param_ids, &mut counter);
         }
 
-        // Styles
-        out.push_str(
-            r#"
-classDef func fill:#c6f6d5,stroke:#2f855a,stroke-width:2px,color:#22543d;
-classDef data fill:#bee3f8,stroke:#2b6cb0,stroke-width:1.5px,color:#1a365d;
-classDef params fill:none,stroke:#e53e3e,stroke-width:2px,color:#742a2a;
-"#,
-        );
+        out.push_str(MERMAID_STYLES);
 
         if !param_ids.is_empty() {
             out.push_str("class ");
@@ -127,6 +189,57 @@ classDef params fill:none,stroke:#e53e3e,stroke-width:2px,color:#742a2a;
         out
     }
 
+    /// Render all children of a function node, respecting the current grouping mode.
+    ///
+    /// - In [`GroupingMode::MergeByName`], children with the same function name are grouped
+    ///   into a shared subgraph like `innerCalls`.
+    /// - In [`GroupingMode::UniquePerCall`], each child is rendered independently.
+    fn render_children(
+        &self,
+        out: &mut String,
+        parent_fn_id: &str,
+        children: &[Arc<Mutex<CallNode>>],
+        param_ids: &mut Vec<String>,
+        counter: &mut usize,
+    ) {
+        if self.grouping == GroupingMode::MergeByName && !children.is_empty() {
+            use std::collections::BTreeMap;
+
+            // Group children by function name
+            let mut groups: BTreeMap<String, Vec<Arc<Mutex<CallNode>>>> = BTreeMap::new();
+            for child in children {
+                let cname = child.lock().unwrap().name.clone();
+                groups.entry(cname).or_default().push(child.clone());
+            }
+
+            // Emit each group as a subgraph
+            for (cname, group) in groups {
+                let subgraph_id = format!("{}Calls", cname);
+                writeln!(out, "subgraph {subgraph_id}[\"{}(...)\"]", cname).unwrap();
+                writeln!(out, "  direction TB").unwrap();
+
+                for child in &group {
+                    self.render_node(out, child, param_ids, counter);
+                }
+
+                writeln!(out, "end").unwrap();
+
+                // Connect parent → all children after closing the subgraph
+                for _child in &group {
+                    writeln!(out, "  {parent_fn_id} --> Params{}", *counter - 1).unwrap();
+                }
+            }
+        } else {
+            // UniquePerCall or no grouping: render each child inline
+            for child in children {
+                self.render_node(out, child, param_ids, counter);
+                writeln!(out, "  {parent_fn_id} --> Params{}", *counter - 1).unwrap();
+            }
+        }
+    }
+
+    /// Render and write the current diagram to the configured output
+    /// (`stdout` or file).
     pub fn flush(&self) {
         let mermaid = self.render();
         match &self.output {
@@ -141,6 +254,15 @@ classDef params fill:none,stroke:#e53e3e,stroke-width:2px,color:#742a2a;
         }
     }
 
+    /// Recursively render a single call node and its children.
+    ///
+    /// Each node produces:
+    /// - A **parameter subgraph** (red capsule) containing all field values
+    /// - A **function node** (green box)
+    /// - Edges from parameters → function, and function → child parameters
+    ///
+    /// The `counter` is used to generate stable unique IDs across the whole tree.
+    /// `param_ids` collects parameter group IDs so they can all be styled later.
     fn render_node(
         &self,
         out: &mut String,
@@ -171,38 +293,8 @@ classDef params fill:none,stroke:#e53e3e,stroke-width:2px,color:#742a2a;
         writeln!(out, "{fn_id}[\"{}()\"]:::func", node.name).unwrap();
         writeln!(out, "{params_id} --> {fn_id}").unwrap();
 
-        if self.grouping == GroupingMode::MergeByName && !node.children.is_empty() {
-            // --- Merge children by function name ---
-            use std::collections::BTreeMap;
-            let mut groups: BTreeMap<String, Vec<Arc<Mutex<CallNode>>>> = BTreeMap::new();
-            for child in &node.children {
-                let cname = child.lock().unwrap().name.clone();
-                groups.entry(cname).or_default().push(child.clone());
-            }
-
-            for (cname, children) in groups {
-                let subgraph_id = format!("{}Calls", cname);
-                writeln!(out, "subgraph {subgraph_id}[\"{}(...)\"]", cname).unwrap();
-                writeln!(out, "  direction TB").unwrap();
-
-                for child in &children {
-                    self.render_node(out, child, param_ids, counter);
-                }
-
-                writeln!(out, "end").unwrap();
-
-                // Connect parent AFTER subgraph is closed
-                for _child in &children {
-                    writeln!(out, "  {fn_id} --> Params{}", *counter - 1).unwrap();
-                }
-            }
-        } else {
-            // --- UniquePerCall or no grouping ---
-            for child in &node.children {
-                self.render_node(out, child, param_ids, counter);
-                writeln!(out, "  {fn_id} --> Params{}", *counter - 1).unwrap();
-            }
-        }
+        // Children (delegate to helper)
+        self.render_children(out, &fn_id, &node.children, param_ids, counter);
     }
 }
 
@@ -210,6 +302,11 @@ impl<S> Layer<S> for MermaidLayer
 where
     S: Subscriber + for<'a> LookupSpan<'a>,
 {
+    /// Called when a new span is created.
+    ///
+    /// Here we allocate a new `CallNode` with the span name and any recorded fields,
+    /// and attach it into the span’s `extensions` so it can later be retrieved in
+    /// `on_close`.
     fn on_new_span(
         &self,
         attrs: &tracing::span::Attributes<'_>,
@@ -235,6 +332,13 @@ where
         }
     }
 
+    /// Called when a span closes.
+    ///
+    /// If the span has a parent, we attach the node into its parent’s children.
+    /// Otherwise, the span is considered a **root** and added to `self.roots`.
+    ///
+    /// When `auto_flush` is enabled, closing a root span will immediately flush
+    /// a complete Mermaid diagram (useful for short-lived programs).
     fn on_close(&self, id: span::Id, ctx: Context<'_, S>) {
         if let Some(span) = ctx.span(&id) {
             let exts = span.extensions();
@@ -260,6 +364,8 @@ where
 
 impl Drop for MermaidLayer {
     fn drop(&mut self) {
-        self.flush();
+        if self.auto_flush {
+            self.flush();
+        }
     }
 }
