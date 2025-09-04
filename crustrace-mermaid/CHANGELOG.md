@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4](https://github.com/lmmx/crustrace/compare/crustrace-mermaid-v0.1.3...crustrace-mermaid-v0.1.4) - 2025-09-04
+
+### <!-- 1 -->Features
+
+- *(debug)* crate feature for easy stringification; fix HTML escaping ([#21](https://github.com/lmmx/crustrace/pull/21))
+
 ## [0.1.3](https://github.com/lmmx/crustrace/compare/crustrace-mermaid-v0.1.2...crustrace-mermaid-v0.1.3) - 2025-09-04
 
 ### <!-- 1 -->Features

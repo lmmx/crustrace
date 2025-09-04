@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.9](https://github.com/lmmx/crustrace/compare/crustrace-v0.1.8...crustrace-v0.1.9) - 2025-09-04
+
+### <!-- 1 -->Features
+
+- *(debug)* crate feature for easy stringification; fix HTML escaping ([#21](https://github.com/lmmx/crustrace/pull/21))
+
 ## [0.1.8](https://github.com/lmmx/crustrace/compare/crustrace-v0.1.7...crustrace-v0.1.8) - 2025-09-04
 
 ### <!-- 1 -->Features
