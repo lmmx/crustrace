@@ -19,3 +19,9 @@ unsynn.workspace = true
 [dev-dependencies]
 insta.workspace = true
 rust-format.workspace = true
+
+[features]
+# Default build has no special formatting — uses Display (`#param_name`)
+default = []
+# Enables Debug (`?#param_name`) formatting of params
+debug = []

@@ -24,3 +24,7 @@ insta.workspace = true
 rust-format.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
+
+[features]
+debug = ["crustrace-core/debug"]
+default = []

@@ -4,8 +4,8 @@ expression: layer.render()
 ---
 flowchart TD
 subgraph Params1[" "]
-  P2_0["json_object = &#123; \&quot;$schema\&quot;: \&quot;https://json-schema.org/draft/2020-12/schema\&quot; &#125;"]:::data
-  P2_1["record_stack = &#91;\&quot;document\&quot;&#93;"]:::data
+  P2_0["json_object = &#123; \&quot;$schema\&quot;: \&quot;https://json-schema.org/draft/2020-12/schema\&quot; }"]:::data
+  P2_1["record_stack = &#91;\&quot;document\&quot;]"]:::data
   P2_0 --- P2_1
 end
 F1["funky()"]:::func

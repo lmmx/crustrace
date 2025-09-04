@@ -18,3 +18,7 @@ tracing-subscriber = { features = ["registry"], workspace = true }
 crustrace.workspace = true
 insta.workspace = true
 tracing = { features = ["std"], workspace = true }
+
+[features]
+debug = ["crustrace/debug"]
+default = ["debug"]
