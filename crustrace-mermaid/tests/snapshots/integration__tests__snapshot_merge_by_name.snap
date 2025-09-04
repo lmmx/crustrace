@@ -27,7 +27,7 @@ end
 F3["inner()"]:::func
 Params3 --> F3
 end
-  F1 --> Params3
+  F1 --> Params2
   F1 --> Params3
 
 classDef func fill:#c6f6d5,stroke:#2f855a,stroke-width:2px,color:#22543d;

@@ -23,7 +23,7 @@
 //! }
 //!
 //! fn main() {
-//!     let layer = MermaidLayer::with_mode(GroupingMode::MergeByName);
+//!     let layer = MermaidLayer::new().with_mode(GroupingMode::MergeByName);
 //!     tracing_subscriber::registry().with(layer).init();
 //!
 //!     outer(5);
@@ -80,6 +80,17 @@ pub enum GroupingMode {
     MergeByName,
 }
 
+/// How to render function parameters in Mermaid output.
+#[derive(Clone, Copy, PartialEq)]
+pub enum ParamRenderMode {
+    /// Current behavior: each parameter is its own node inside a subgraph.
+    PerFieldSubgraph,
+    /// Collapsed: one node per function call with all params listed inside.
+    SingleNode,
+    /// Collapsed *and* grouped together into a shared subgraph.
+    SingleNodeGrouped,
+}
+
 /// A [`tracing_subscriber::Layer`] that collects function spans
 /// and renders them as a Mermaid flowchart.
 ///
@@ -89,6 +100,7 @@ pub struct MermaidLayer {
     roots: Arc<Mutex<Vec<Arc<Mutex<CallNode>>>>>,
     output: OutputTarget,
     grouping: GroupingMode,
+    param_mode: ParamRenderMode,
     auto_flush: bool,
 }
 
@@ -120,24 +132,28 @@ classDef params fill:none,stroke:#e53e3e,stroke-width:2px,color:#742a2a;
 impl MermaidLayer {
     /// Create a new layer that writes to stdout when dropped.
     ///
-    /// By default, uses [`GroupingMode::MergeByName`] and enables auto-flush.
+    /// By default, uses [`GroupingMode::MergeByName`],
+    /// [`ParamRenderMode::PerFieldSubgraph`] and enables auto-flush.
     pub fn new() -> Self {
         Self {
             roots: Arc::new(Mutex::new(Vec::new())),
             output: OutputTarget::Stdout,
             grouping: GroupingMode::MergeByName,
+            param_mode: ParamRenderMode::PerFieldSubgraph,
             auto_flush: true,
         }
     }
 
     /// Like [`MermaidLayer::new`] but lets you choose the [`GroupingMode`].
-    pub fn with_mode(mode: GroupingMode) -> Self {
-        Self {
-            roots: Arc::new(Mutex::new(Vec::new())),
-            output: OutputTarget::Stdout,
-            grouping: mode,
-            auto_flush: true,
-        }
+    pub fn with_mode(mut self, mode: GroupingMode) -> Self {
+        self.grouping = mode;
+        self
+    }
+
+    /// Override the parameter display mode.
+    pub fn with_params_mode(mut self, mode: ParamRenderMode) -> Self {
+        self.param_mode = mode;
+        self
     }
 
     /// Disable automatic flushing on root span close.
@@ -158,6 +174,7 @@ impl MermaidLayer {
             roots: Arc::new(Mutex::new(Vec::new())),
             output: OutputTarget::File(Arc::new(Mutex::new(file))),
             grouping: GroupingMode::MergeByName, // default
+            param_mode: ParamRenderMode::PerFieldSubgraph,
             auto_flush: true,
         })
     }
@@ -170,12 +187,27 @@ impl MermaidLayer {
         let roots = self.roots.lock().unwrap();
         let mut out = String::from("flowchart TD\n");
 
-        // Track all param group IDs
         let mut param_ids = Vec::new();
 
-        let mut counter = 1;
+        let mut fn_counter = 1;
+        let mut param_counter = 1;
         for root in roots.iter() {
-            self.render_node(&mut out, root, &mut param_ids, &mut counter);
+            self.render_node(
+                &mut out,
+                root,
+                &mut param_ids,
+                &mut fn_counter,
+                &mut param_counter,
+            );
+        }
+
+        if self.param_mode == ParamRenderMode::SingleNodeGrouped && !param_ids.is_empty() {
+            writeln!(out, "subgraph ParamsKey[\"Parameters\"]").unwrap();
+            writeln!(out, "  direction TB").unwrap();
+            for pk in &param_ids {
+                writeln!(out, "  {pk}").unwrap();
+            }
+            writeln!(out, "end").unwrap();
         }
 
         out.push_str(MERMAID_STYLES);
@@ -194,13 +226,17 @@ impl MermaidLayer {
     /// - In [`GroupingMode::MergeByName`], children with the same function name are grouped
     ///   into a shared subgraph like `innerCalls`.
     /// - In [`GroupingMode::UniquePerCall`], each child is rendered independently.
-    fn render_children(
+    ///
+    /// Render children in PerFieldSubgraph mode.
+    /// Parent connects to each child's params.
+    fn render_children_subgraph(
         &self,
         out: &mut String,
         parent_fn_id: &str,
         children: &[Arc<Mutex<CallNode>>],
         param_ids: &mut Vec<String>,
-        counter: &mut usize,
+        fn_counter: &mut usize,
+        param_counter: &mut usize,
     ) {
         if self.grouping == GroupingMode::MergeByName && !children.is_empty() {
             use std::collections::BTreeMap;
@@ -218,23 +254,49 @@ impl MermaidLayer {
                 writeln!(out, "subgraph {subgraph_id}[\"{}(...)\"]", cname).unwrap();
                 writeln!(out, "  direction TB").unwrap();
 
+                let mut child_param_ids = Vec::new();
                 for child in &group {
-                    self.render_node(out, child, param_ids, counter);
+                    let (_child_fn, child_param) =
+                        self.render_node(out, child, param_ids, fn_counter, param_counter);
+                    if let Some(pid) = child_param {
+                        child_param_ids.push(pid);
+                    }
                 }
 
                 writeln!(out, "end").unwrap();
 
-                // Connect parent → all children after closing the subgraph
-                for _child in &group {
-                    writeln!(out, "  {parent_fn_id} --> Params{}", *counter - 1).unwrap();
+                // Connect parent to each child's param node
+                for pid in child_param_ids {
+                    writeln!(out, "  {parent_fn_id} --> {pid}").unwrap();
                 }
             }
         } else {
-            // UniquePerCall or no grouping: render each child inline
+            // UniquePerCall or no grouping
             for child in children {
-                self.render_node(out, child, param_ids, counter);
-                writeln!(out, "  {parent_fn_id} --> Params{}", *counter - 1).unwrap();
+                let (_child_fn, child_param) =
+                    self.render_node(out, child, param_ids, fn_counter, param_counter);
+                if let Some(pid) = child_param {
+                    writeln!(out, "  {parent_fn_id} --> {pid}").unwrap();
+                }
             }
+        }
+    }
+
+    /// Render children in SingleNode/Grouped mode.
+    /// Parent connects directly fn → fn.
+    fn render_children_direct(
+        &self,
+        out: &mut String,
+        parent_fn_id: &str,
+        children: &[Arc<Mutex<CallNode>>],
+        param_ids: &mut Vec<String>,
+        fn_counter: &mut usize,
+        param_counter: &mut usize,
+    ) {
+        for child in children {
+            let (child_fn, _child_param) =
+                self.render_node(out, child, param_ids, fn_counter, param_counter);
+            writeln!(out, "  {parent_fn_id} --> {child_fn}").unwrap();
         }
     }
 
@@ -255,46 +317,103 @@ impl MermaidLayer {
     }
 
     /// Recursively render a single call node and its children.
-    ///
-    /// Each node produces:
-    /// - A **parameter subgraph** (red capsule) containing all field values
-    /// - A **function node** (green box)
-    /// - Edges from parameters → function, and function → child parameters
-    ///
-    /// The `counter` is used to generate stable unique IDs across the whole tree.
-    /// `param_ids` collects parameter group IDs so they can all be styled later.
+    /// Returns (fn_id, Option<param_id>).
     fn render_node(
         &self,
         out: &mut String,
         node: &Arc<Mutex<CallNode>>,
         param_ids: &mut Vec<String>,
-        counter: &mut usize,
-    ) {
+        fn_counter: &mut usize,
+        param_counter: &mut usize,
+    ) -> (String, Option<String>) {
         let node = node.lock().unwrap();
-        let fn_id = format!("F{}", *counter);
-        let params_id = format!("Params{}", *counter);
-        *counter += 1;
 
-        // Remember this param capsule for styling later
-        param_ids.push(params_id.clone());
+        // Allocate function ID
+        let fn_id = format!("F{}", *fn_counter);
+        *fn_counter += 1;
 
-        // Emit the param subgraph
-        writeln!(out, "subgraph {params_id}[\" \"]").unwrap();
-        for (i, (k, v)) in node.fields.iter().enumerate() {
-            let data_id = format!("P{}_{}", *counter, i);
-            writeln!(out, "  {data_id}[\"{k} = {v}\"]:::data").unwrap();
-            if i > 0 {
-                writeln!(out, "  P{}_{} --- P{}_{}", *counter, i - 1, *counter, i).unwrap();
+        match self.param_mode {
+            ParamRenderMode::PerFieldSubgraph => {
+                // Allocate param group ID
+                let params_id = format!("Params{}", *param_counter);
+                *param_counter += 1;
+
+                // Track for styling
+                param_ids.push(params_id.clone());
+
+                // Emit the param subgraph
+                writeln!(out, "subgraph {params_id}[\" \"]").unwrap();
+                for (i, (k, v)) in node.fields.iter().enumerate() {
+                    let data_id = format!("P{}_{}", *param_counter, i);
+                    writeln!(out, "  {data_id}[\"{k} = {v}\"]:::data").unwrap();
+                    if i > 0 {
+                        writeln!(
+                            out,
+                            "  P{}_{} --- P{}_{}",
+                            *param_counter,
+                            i - 1,
+                            *param_counter,
+                            i
+                        )
+                        .unwrap();
+                    }
+                }
+                writeln!(out, "end").unwrap();
+
+                // Function node
+                writeln!(out, "{fn_id}[\"{}()\"]:::func", node.name).unwrap();
+                writeln!(out, "{params_id} --> {fn_id}").unwrap();
+
+                // Children connect via params
+                self.render_children_subgraph(
+                    out,
+                    &fn_id,
+                    &node.children,
+                    param_ids,
+                    fn_counter,
+                    param_counter,
+                );
+
+                (fn_id, Some(params_id))
+            }
+
+            ParamRenderMode::SingleNode | ParamRenderMode::SingleNodeGrouped => {
+                // Function node
+                writeln!(out, "{fn_id}[\"{}()\"]:::func", node.name).unwrap();
+
+                // Param key node (optional)
+                let mut pk_opt = None;
+                if !node.fields.is_empty() {
+                    let pk_id = format!("PK{}", *param_counter);
+                    *param_counter += 1;
+
+                    let mut label = format!("{}(params):", node.name);
+                    for (k, v) in &node.fields {
+                        label.push_str(&format!("\n• {} = {}", k, v));
+                    }
+
+                    writeln!(out, "{pk_id}[\"{label}\"]:::data").unwrap();
+                    writeln!(out, "{fn_id} -.-> {pk_id}").unwrap();
+
+                    if self.param_mode == ParamRenderMode::SingleNodeGrouped {
+                        param_ids.push(pk_id.clone());
+                    }
+                    pk_opt = Some(pk_id);
+                }
+
+                // Children connect directly fn → fn
+                self.render_children_direct(
+                    out,
+                    &fn_id,
+                    &node.children,
+                    param_ids,
+                    fn_counter,
+                    param_counter,
+                );
+
+                (fn_id, pk_opt)
             }
         }
-        writeln!(out, "end").unwrap();
-
-        // Function node
-        writeln!(out, "{fn_id}[\"{}()\"]:::func", node.name).unwrap();
-        writeln!(out, "{params_id} --> {fn_id}").unwrap();
-
-        // Children (delegate to helper)
-        self.render_children(out, &fn_id, &node.children, param_ids, counter);
     }
 }
 
