@@ -1,5 +1,22 @@
 use tracing::field::{Field, Visit};
 
+/// Escape a string for Mermaid labels by converting special characters
+/// into HTML entities. This prevents Mermaid parse errors while keeping
+/// the full value visible.
+fn escape_mermaid(input: &str) -> String {
+    input
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;")
+        .replace('{', "&#123;")
+        .replace('}', "&#125;")
+        .replace('[', "&#91;")
+        .replace(']', "&#93;")
+        .replace('|', "&#124;")
+}
+
 /// A [`Visit`] implementation that captures span fields as `(key, value)` pairs.
 ///
 /// This visitor is used in [`MermaidLayer::on_new_span`](crate::MermaidLayer)
@@ -19,7 +36,7 @@ impl<'a> Visit for FieldVisitor<'a> {
     ///
     /// Called once per span field by the `tracing` framework.
     fn record_debug(&mut self, field: &Field, value: &dyn std::fmt::Debug) {
-        // Format the field value.
+        // Format value using Debug (so numbers, strings, etc. all work)
         let raw = format!("{:?}", value);
 
         // Strip surrounding quotes from strings for readability.
@@ -29,6 +46,9 @@ impl<'a> Visit for FieldVisitor<'a> {
             raw
         };
 
-        self.fields.push((field.name().to_string(), clean));
+        // Escape to Mermaid-safe form
+        let escaped = escape_mermaid(&clean);
+
+        self.fields.push((field.name().to_string(), escaped));
     }
 }
