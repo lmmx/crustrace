@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.6](https://github.com/lmmx/crustrace/compare/crustrace-mermaid-v0.1.5...crustrace-mermaid-v0.1.6) - 2025-09-04
+
+### <!-- 8 -->Styling
+
+- no harsh red colour palette ([#23](https://github.com/lmmx/crustrace/pull/23))
+
 ## [0.1.5](https://github.com/lmmx/crustrace/compare/crustrace-mermaid-v0.1.4...crustrace-mermaid-v0.1.5) - 2025-09-04
 
 ### <!-- 1 -->Features
