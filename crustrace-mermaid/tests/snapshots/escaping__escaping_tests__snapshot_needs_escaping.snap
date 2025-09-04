@@ -1,0 +1,17 @@
+---
+source: crustrace-mermaid/tests/escaping.rs
+expression: layer.render()
+---
+flowchart TD
+subgraph Params1[" "]
+  P2_0["json_object = &#123; \&quot;$schema\&quot;: \&quot;https://json-schema.org/draft/2020-12/schema\&quot; &#125;"]:::data
+  P2_1["record_stack = &#91;\&quot;document\&quot;&#93;"]:::data
+  P2_0 --- P2_1
+end
+F1["funky()"]:::func
+Params1 --> F1
+
+classDef func fill:#c6f6d5,stroke:#2f855a,stroke-width:2px,color:#22543d;
+classDef data fill:#bee3f8,stroke:#2b6cb0,stroke-width:1.5px,color:#1a365d;
+classDef params fill:none,stroke:#e53e3e,stroke-width:2px,color:#742a2a;
+class Params1 params;
