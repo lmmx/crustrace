@@ -1,6 +1,6 @@
 [package]
 description = "Tracing subscriber layer that renders crustrace spans as Mermaid flowcharts"
-documentation = "https://docs.rs/crustrace"
+documentation = "https://docs.rs/crustrace-mermaid"
 edition.workspace = true
 homepage = "https://github.com/lmmx/crustrace"
 license.workspace = true
